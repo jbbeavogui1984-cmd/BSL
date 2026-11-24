@@ -281,7 +281,7 @@
 
         const CATEGORY_META = {
             points: { label: 'Points marqués', pillLabel: 'PTS', shortName: 'Points' },
-            rebounds: { label: 'Rebonds (Off + Déf)', pillLabel: 'REB', shortName: 'Rebonds' },
+            rebounds: { label: 'Rebonds offensifs & défensifs', pillLabel: 'REB', shortName: 'Rebonds' },
             assists: { label: 'Passes décisives', pillLabel: 'PAD', shortName: 'Passes' },
             steals: { label: 'Interceptions', pillLabel: 'INT', shortName: 'Interceptions' },
             blocks: { label: 'Contres', pillLabel: 'CTR', shortName: 'Contres' },
@@ -645,7 +645,7 @@
             const container = document.getElementById('stats-container');
             container.innerHTML = '';
 
-            // Points marqués (sans chiffre devant)
+            // Points marqués
             if (!state.hiddenCategories.includes('points')) {
                 const target = player.targets.points || 0;
                 const status = getStatus(player.points, target);
@@ -681,22 +681,36 @@
                 container.appendChild(sec);
             }
 
-            // Rebonds (Offensifs + Défensifs -> Total, objectif unique)
+            // Rebonds : différenciation claire Rebonds offensifs / Rebonds défensifs + Total & objectifs
             if (!state.hiddenCategories.includes('rebounds')) {
                 const totalReb = getTotalRebounds(player);
-                const target = player.targets.rebounds || 0;
-                const status = getStatus(totalReb, target);
+                const offReb = player.offRebounds || 0;
+                const defReb = player.defRebounds || 0;
+                const offTarget = player.targets.offRebounds || 0;
+                const defTarget = player.targets.defRebounds || 0;
+                const totalTarget = player.targets.rebounds || 0;
+
+                const subGoalsOk = (offTarget === 0 || offReb >= offTarget) && (defTarget === 0 || defReb >= defTarget);
+                const totalGoalOk = totalTarget === 0 || totalReb >= totalTarget;
+                const hasAnyGoal = totalTarget > 0 || offTarget > 0 || defTarget > 0;
+                const status = hasAnyGoal ? (subGoalsOk && totalGoalOk ? 'green' : 'red') : 'neutral';
+
                 const theme = getCardTheme(status, animatedCategory === 'rebounds');
-                const pct = target > 0 ? Math.min(100, Math.round((totalReb / target) * 100)) : 0;
+                const pct = totalTarget > 0
+                    ? Math.min(100, Math.round((totalReb / totalTarget) * 100))
+                    : 0;
 
                 const sec = document.createElement('section');
                 sec.className = theme.cardClass;
                 sec.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <h2 class="text-base sm:text-lg font-extrabold text-white">Rebonds (Off + Déf)</h2>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">Rebonds (Offensifs & Défensifs)</h2>
                             <div class="mt-0.5 flex items-center gap-2 flex-wrap">
-                                ${target > 0 ? `<span class="text-xs font-semibold ${status === 'green' ? 'text-emerald-300' : 'text-rose-300'}">${totalReb} / ${target}</span>` : ''}
+                                <span class="text-xs font-bold text-amber-300">Off : ${offReb}${offTarget > 0 ? `/${offTarget}` : ''}</span>
+                                <span class="text-xs text-slate-600">•</span>
+                                <span class="text-xs font-bold text-sky-300">Déf : ${defReb}${defTarget > 0 ? `/${defTarget}` : ''}</span>
+                                ${totalTarget > 0 ? `<span class="text-xs font-semibold ${totalReb >= totalTarget ? 'text-emerald-300' : 'text-rose-300'}">(Total ${totalReb}/${totalTarget})</span>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center gap-2.5 shrink-0">
@@ -704,33 +718,73 @@
                             ${buildCardCheckboxHTML('rebounds')}
                         </div>
                     </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
-                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
-                            <span class="text-xs font-extrabold text-amber-300 uppercase">Offensifs</span>
+                        <div class="rounded-xl bg-slate-950/75 border border-amber-500/25 p-2.5 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-extrabold text-amber-300 uppercase block">Rebond offensif</span>
+                                ${offTarget > 0 ? `<span class="text-[11px] font-semibold ${offReb >= offTarget ? 'text-emerald-300' : 'text-amber-200/80'}">Obj. ${offReb}/${offTarget}</span>` : ''}
+                            </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <button type="button" data-action="stat-delta" data-stat="offRebounds" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
-                                <span class="w-9 text-center text-xl font-black tabular-nums">${player.offRebounds}</span>
-                                <button type="button" data-action="stat-delta" data-stat="offRebounds" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                                <span class="w-9 text-center text-xl font-black tabular-nums text-amber-200">${offReb}</span>
+                                <button type="button" data-action="stat-delta" data-stat="offRebounds" data-delta="1" class="w-12 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-400 font-black text-lg text-white">+1</button>
                             </div>
                         </div>
-                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
-                            <span class="text-xs font-extrabold text-sky-300 uppercase">Défensifs</span>
+
+                        <div class="rounded-xl bg-slate-950/75 border border-sky-500/25 p-2.5 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-extrabold text-sky-300 uppercase block">Rebond défensif</span>
+                                ${defTarget > 0 ? `<span class="text-[11px] font-semibold ${defReb >= defTarget ? 'text-emerald-300' : 'text-sky-200/80'}">Obj. ${defReb}/${defTarget}</span>` : ''}
+                            </div>
                             <div class="flex items-center gap-2 shrink-0">
                                 <button type="button" data-action="stat-delta" data-stat="defRebounds" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
-                                <span class="w-9 text-center text-xl font-black tabular-nums">${player.defRebounds}</span>
-                                <button type="button" data-action="stat-delta" data-stat="defRebounds" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                                <span class="w-9 text-center text-xl font-black tabular-nums text-sky-200">${defReb}</span>
+                                <button type="button" data-action="stat-delta" data-stat="defRebounds" data-delta="1" class="w-12 h-10 rounded-xl bg-sky-600 hover:bg-sky-500 border border-sky-400 font-black text-lg text-white">+1</button>
                             </div>
                         </div>
                     </div>
+
                     <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
-                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${target > 0 ? Math.max(pct, totalReb > 0 ? 6 : 0) : 0}%"></div>
+                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${totalTarget > 0 ? Math.max(pct, totalReb > 0 ? 6 : 0) : 0}%"></div>
                     </div>
-                    ${buildTargetInputBox('rebounds', 'Objectif Rebonds', target)}
+
+                    <div class="mt-3 pt-2.5 border-t border-white/10 space-y-2">
+                        <div class="px-2.5 flex items-center justify-between gap-2">
+                            <label for="target-rebounds" class="text-xs sm:text-sm font-semibold text-slate-200">Objectif Total Rebonds :</label>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button" data-action="target-dec" data-target-key="rebounds" class="w-10 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-black text-base">−</button>
+                                <input id="target-rebounds" type="number" min="0" max="999" inputmode="numeric"
+                                    data-action="target-input" data-target-key="rebounds" value="${totalTarget}"
+                                    class="w-9 h-9 text-center rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-400 text-white font-black text-sm outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="rebounds" class="w-12 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-black text-base">+</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <label for="target-offRebounds" class="text-xs font-semibold text-amber-300">Obj. Rebonds Off :</label>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="target-dec" data-target-key="offRebounds" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
+                                    <input id="target-offRebounds" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="offRebounds" value="${offTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
+                                    <button type="button" data-action="target-inc" data-target-key="offRebounds" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                                </div>
+                            </div>
+                            <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <label for="target-defRebounds" class="text-xs font-semibold text-sky-300">Obj. Rebonds Déf :</label>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="target-dec" data-target-key="defRebounds" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
+                                    <input id="target-defRebounds" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="defRebounds" value="${defTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
+                                    <button type="button" data-action="target-inc" data-target-key="defRebounds" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(sec);
             }
 
-            // Passes décisives, Interceptions, Contres (sans chiffre devant, boutons alignés)
+            // Passes décisives, Interceptions, Contres
             [
                 { key: 'assists', val: player.assists, target: player.targets.assists || 0 },
                 { key: 'steals', val: player.steals, target: player.targets.steals || 0 },
@@ -772,7 +826,7 @@
                 container.appendChild(sec);
             });
 
-            // Dépassement de soi (sans chiffre devant, 1 objectif Sprints + 1 objectif Balles arrachées, sans doublon)
+            // Dépassement de soi
             if (!state.hiddenCategories.includes('effort')) {
                 const totalEff = getTotalEffort(player);
                 const sprintsTarget = player.targets.sprintsTarget || 0;
@@ -1055,6 +1109,8 @@
                     date: state.matchDate || '',
                     points: p.points,
                     rebounds: getTotalRebounds(p),
+                    offRebounds: p.offRebounds || 0,
+                    defRebounds: p.defRebounds || 0,
                     assists: p.assists,
                     steals: p.steals,
                     blocks: p.blocks,
@@ -1070,7 +1126,7 @@
                 const summary = [
                     `🏀 ${p.name || `Joueur ${state.activePlayerIndex + 1}`}${state.opponent ? ` vs ${state.opponent}` : ''}`,
                     `Points : ${p.points}`,
-                    `Rebonds : ${getTotalRebounds(p)} (${p.offRebounds} Off / ${p.defRebounds} Déf)`,
+                    `Rebonds : ${getTotalRebounds(p)} (Off : ${p.offRebounds || 0} / Déf : ${p.defRebounds || 0})`,
                     `Passes : ${p.assists}`,
                     `Interceptions : ${p.steals}`,
                     `Contres : ${p.blocks}`,
