@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basket Stats Live - Multi-Joueurs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        @keyframes pulseSuccess {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.015); }
+            100% { transform: scale(1); }
+        }
+        .goal-reached-anim {
+            animation: pulseSuccess 0.35s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-orange-500 selection:text-white">
+
+    <!-- Bouton flottant fixe côté gauche, vers le milieu de l'écran (ballon en flamme original) -->
+    <button id="magic-notes-btn" type="button" aria-label="Notes rapides du match"
+        class="fixed left-3 top-1/2 -translate-y-1/2 z-30 w-13 h-14 px-2.5 py-2 rounded-2xl bg-gradient-to-b from-amber-500 via-orange-600 to-rose-700 hover:from-amber-400 hover:via-orange-500 hover:to-rose-600 active:scale-95 text-white border border-amber-300/60 shadow-xl shadow-orange-950/60 flex flex-col items-center justify-center gap-0.5 transition select-none">
+        <span class="relative flex items-center justify-center w-8 h-8">
+            <!-- Flamme stylisée originale -->
+            <svg class="w-8 h-8 text-amber-200 drop-shadow" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13.5 2.2c.3 2.8-1.4 4.7-2.8 6.2-1.1 1.2-1.9 2.3-1.9 3.9 0 .4.1.8.2 1.2-.9-.5-1.6-1.4-1.8-2.5-1.7 1.6-2.7 3.8-2.7 6.1 0 4.4 3.5 7.8 7.9 7.8 4.6 0 8.1-3.5 8.1-8.2 0-4.2-2.6-7.6-5.1-13.8z"/>
+            </svg>
+            <!-- Ballon minimaliste superposé -->
+            <svg class="w-4 h-4 text-slate-950 absolute bottom-0.5 right-0.5 bg-amber-300/90 rounded-full p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <path d="M12 3a14 14 0 0 1 0 18"/>
+            </svg>
+        </span>
+        <span id="magic-notes-count" class="text-[10px] font-black leading-none bg-slate-950/80 text-amber-200 px-1.5 py-0.5 rounded-full tabular-nums">0</span>
+    </button>
+
+    <!-- En-tête de l'application -->
+    <header class="bg-slate-900 border-b border-slate-800 z-20 shadow-xl">
+        <div class="max-w-3xl mx-auto px-3.5 sm:px-4 py-3">
+            <!-- Ligne 1 : Titre, Historique et Masquer objectifs -->
+            <div class="flex items-center justify-between gap-1.5 sm:gap-2 mb-2.5">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="px-2.5 sm:px-3 h-12 sm:h-13 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex flex-col items-center justify-center gap-0.5 shadow-md shadow-orange-500/20 shrink-0">
+                        <svg class="w-5 h-5 sm:w-5 sm:h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M5.6 5.6c3.5 3.5 3.5 9.3 0 12.8"/>
+                            <path d="M18.4 5.6c-3.5 3.5-3.5 9.3 0 12.8"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <line x1="12" y1="2" x2="12" y2="22"/>
+                        </svg>
+                        <span class="text-[10px] font-black tracking-wider leading-none text-white">BSL</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button id="toggle-history-btn" type="button" class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:scale-95 text-sky-300 border border-slate-700 transition flex items-center gap-1 shadow-sm whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 8v4l3 3"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        <span id="toggle-history-label">Historique (0)</span>
+                    </button>
+
+                    <button id="toggle-hide-mode-btn" type="button" class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 border border-slate-700 transition flex items-center gap-1 shadow-sm whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                        <span id="toggle-hide-mode-label">Masquer objectifs</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bandeau Double-Double / Triple-Double / Quadruple-Double / Quintuple-Double -->
+            <div id="multi-double-banner" class="rounded-xl border border-slate-800 bg-slate-950/90 p-2.5 sm:p-3 mb-2.5 transition-all duration-300">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span id="tier-icon" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <span id="tier-title" class="text-sm sm:text-base font-black tracking-wide uppercase text-slate-300 truncate block">En cours (0/5 à 10+)</span>
+                            <p id="tier-subtitle" class="text-[11px] sm:text-xs text-slate-400 truncate">Atteins 10+ sur 2 catégories pour un Double-Double</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
+                        <span class="text-[11px] font-semibold text-slate-400">Seuil Double :</span>
+                        <button type="button" id="double-threshold-dec" aria-label="Diminuer le seuil" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">−</button>
+                        <span id="double-threshold-val" class="text-xs font-black text-amber-400 w-5 text-center tabular-nums">10</span>
+                        <button type="button" id="double-threshold-inc" aria-label="Augmenter le seuil" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">+</button>
+                    </div>
+                </div>
+
+                <div id="tier-pills" class="grid grid-cols-5 gap-1.5 mt-2.5 pt-2 border-t border-white/5"></div>
+            </div>
+
+            <!-- Sélecteur des 4 joueurs + nom joueur + adversaire + date à droite -->
+            <div id="player-switcher-section" class="space-y-2">
+                <div class="grid grid-cols-4 gap-1.5" id="player-slot-buttons">
+                    <button type="button" data-player-slot="0" class="player-slot-btn py-2 rounded-xl font-black text-sm border transition">1</button>
+                    <button type="button" data-player-slot="1" class="player-slot-btn py-2 rounded-xl font-black text-sm border transition">2</button>
+                    <button type="button" data-player-slot="2" class="player-slot-btn py-2 rounded-xl font-black text-sm border transition">3</button>
+                    <button type="button" data-player-slot="3" class="player-slot-btn py-2 rounded-xl font-black text-sm border transition">4</button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                    <input type="text" id="player-name-input" placeholder="Nom du joueur" maxlength="25"
+                        class="sm:col-span-4 w-full bg-slate-950/80 border border-slate-800 focus:border-orange-500 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none">
+                    <input type="text" id="match-opponent-input" placeholder="Adversaire" maxlength="30"
+                        class="sm:col-span-4 w-full bg-slate-950/80 border border-slate-800 focus:border-orange-500 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none">
+                    <input type="date" id="match-date-input"
+                        class="sm:col-span-4 w-full bg-slate-950/80 border border-slate-800 focus:border-orange-500 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white outline-none sm:text-right">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenu principal : cartes statistiques + barre des catégories masquées -->
+    <main class="flex-1 max-w-3xl w-full mx-auto px-3 sm:px-4 py-4 space-y-3.5" id="stats-main">
+        <div id="hidden-categories-bar"></div>
+        <div id="stats-container" class="space-y-3.5"></div>
+    </main>
+
+    <!-- Vue Historique -->
+    <section id="history-view" class="hidden flex-1 max-w-3xl w-full mx-auto px-3 sm:px-4 py-4 space-y-4">
+        <div id="history-list" class="space-y-3"></div>
+    </section>
+
+    <!-- Pied de page actions -->
+    <footer id="live-footer" class="bg-slate-900 border-t border-slate-800 mt-4">
+        <div class="max-w-3xl mx-auto px-3 sm:px-4 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button id="archive-match-btn" type="button"
+                class="py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                <span>Archiver le match</span>
+            </button>
+            <button id="copy-summary-btn" type="button"
+                class="py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                <span>Copier le bilan</span>
+            </button>
+            <button id="reset-match-btn" type="button"
+                class="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-rose-950/70 hover:text-rose-300 active:scale-[0.98] text-slate-300 border border-slate-700 font-semibold text-sm transition flex items-center justify-center gap-2">
+                <span>Nouveau match (0)</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Modale Notes rapides -->
+    <div id="magic-notes-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl max-h-[88vh] flex flex-col">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <div>
+                    <h2 class="text-lg font-extrabold text-white">Notes de match</h2>
+                    <p class="text-xs text-slate-400">Remarques rapides pendant le match</p>
+                </div>
+                <button id="close-magic-notes-btn" type="button" aria-label="Fermer les notes" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">
+                    ✕
+                </button>
+            </div>
+
+            <div id="magic-notes-list" class="flex-1 overflow-y-auto space-y-2 mb-3 pr-1"></div>
+
+            <form id="add-magic-note-form" class="flex gap-2 border-t border-slate-800 pt-3">
+                <input id="magic-note-input" type="text" maxlength="160" required placeholder="Écrire une note..."
+                    class="flex-1 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2.5 text-base text-white placeholder-slate-500 outline-none">
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shrink-0">
+                    Valider
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modale confirmation Nouveau Match -->
+    <div id="reset-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+            <h2 class="text-lg font-bold text-white mb-2">Démarrer un nouveau match ?</h2>
+            <p class="text-sm text-slate-300 mb-5">Tous les compteurs des 4 joueurs repasseront à <strong class="text-white">0</strong>.</p>
+            <div class="flex items-center justify-end gap-2.5">
+                <button id="cancel-reset-btn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm">Annuler</button>
+                <button id="confirm-reset-btn" type="button" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm">Remettre à 0</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-notification" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+        <div id="toast-text" class="bg-slate-800 text-white border border-slate-600 px-4 py-2.5 rounded-full text-sm font-semibold shadow-xl whitespace-nowrap"></div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'basket_stats_multi_v1';
+        const HISTORY_STORAGE_KEY = 'basket_stats_multi_history_v1';
+        const NOTES_STORAGE_KEY = 'basket_stats_multi_notes_v1';
+
+        const CATEGORY_META = {
+            points: { label: 'Points marqués', pillLabel: 'PTS', shortName: 'Points' },
+            rebounds: { label: 'Rebonds (Off + Déf)', pillLabel: 'REB', shortName: 'Rebonds' },
+            assists: { label: 'Passes décisives', pillLabel: 'PAD', shortName: 'Passes' },
+            steals: { label: 'Interceptions', pillLabel: 'INT', shortName: 'Interceptions' },
+            blocks: { label: 'Contres', pillLabel: 'CTR', shortName: 'Contres' },
+            effort: { label: 'Dépassement de soi', pillLabel: 'EFF', shortName: 'Dépassement' }
+        };
+
+        function createDefaultPlayer(index) {
+            return {
+                name: `Joueur ${index + 1}`,
+                points: 0,
+                offRebounds: 0,
+                defRebounds: 0,
+                assists: 0,
+                steals: 0,
+                blocks: 0,
+                sprints: 0,
+                looseBalls: 0,
+                targets: {
+                    points: 10,
+                    rebounds: 10,
+                    offRebounds: 0,
+                    defRebounds: 0,
+                    assists: 10,
+                    steals: 10,
+                    blocks: 10,
+                    effort: 0
+                }
+            };
+        }
+
+        let state = {
+            activePlayerIndex: 0,
+            opponent: '',
+            matchDate: new Date().toISOString().slice(0, 10),
+            doubleThreshold: 10,
+            hiddenCategories: [],
+            players: [
+                createDefaultPlayer(0),
+                createDefaultPlayer(1),
+                createDefaultPlayer(2),
+                createDefaultPlayer(3)
+            ]
+        };
+
+        let isHideSelectionMode = false;
+        let animatedCategory = null;
+        let toastTimer = null;
+        let activeTab = 'live';
+        let archivedMatches = [];
+        let magicNotes = [];
+
+        function getActivePlayer() {
+            return state.players[state.activePlayerIndex] || state.players[0];
+        }
+
+        function getTotalRebounds(player = getActivePlayer()) {
+            return (player.offRebounds || 0) + (player.defRebounds || 0);
+        }
+
+        function getTotalEffort(player = getActivePlayer()) {
+            return (player.sprints || 0) + (player.looseBalls || 0);
+        }
+
+        function getStatus(count, target) {
+            if (!target || target <= 0) return 'neutral';
+            return count >= target ? 'green' : 'red';
+        }
+
+        function getCardTheme(status, isAnimated) {
+            if (status === 'green') {
+                return {
+                    cardClass: `rounded-2xl border-2 border-emerald-500 bg-emerald-950/35 shadow-lg p-3.5 sm:p-4 transition-all duration-300 ${isAnimated ? 'goal-reached-anim' : ''}`,
+                    badgeHTML: '',
+                    barClass: 'bg-emerald-500',
+                    valueClass: 'text-emerald-400'
+                };
+            }
+            if (status === 'red') {
+                return {
+                    cardClass: 'rounded-2xl border-2 border-rose-500/80 bg-rose-950/30 shadow-lg p-3.5 sm:p-4 transition-all duration-300',
+                    badgeHTML: '',
+                    barClass: 'bg-rose-500',
+                    valueClass: 'text-white'
+                };
+            }
+            return {
+                cardClass: 'rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 transition-all duration-300',
+                badgeHTML: '',
+                barClass: 'bg-slate-600',
+                valueClass: 'text-white'
+            };
+        }
+
+        function escapeHTML(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const text = document.getElementById('toast-text');
+            if (!toast || !text) return;
+            text.textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        function resetViewportZoom() {
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            window.scrollTo({ top: window.scrollY, left: 0, behavior: 'instant' });
+        }
+
+        function saveAll() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+                localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(archivedMatches));
+                localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(magicNotes));
+            } catch (err) {
+                console.error('Erreur sauvegarde :', err);
+            }
+        }
+
+        function loadAll() {
+            try {
+                const rawState = localStorage.getItem(STORAGE_KEY);
+                if (rawState) {
+                    const parsed = JSON.parse(rawState);
+                    if (parsed && typeof parsed === 'object') {
+                        state = {
+                            ...state,
+                            ...parsed,
+                            hiddenCategories: Array.isArray(parsed.hiddenCategories) ? parsed.hiddenCategories : [],
+                            players: Array.isArray(parsed.players) && parsed.players.length === 4
+                                ? parsed.players.map((p, idx) => ({
+                                    ...createDefaultPlayer(idx),
+                                    ...p,
+                                    targets: { ...createDefaultPlayer(idx).targets, ...(p.targets || {}) }
+                                }))
+                                : state.players
+                        };
+                    }
+                }
+                const rawHist = localStorage.getItem(HISTORY_STORAGE_KEY);
+                if (rawHist) {
+                    const parsedHist = JSON.parse(rawHist);
+                    if (Array.isArray(parsedHist)) archivedMatches = parsedHist;
+                }
+                const rawNotes = localStorage.getItem(NOTES_STORAGE_KEY);
+                if (rawNotes) {
+                    const parsedNotes = JSON.parse(rawNotes);
+                    if (Array.isArray(parsedNotes)) magicNotes = parsedNotes;
+                }
+            } catch (err) {
+                console.error('Erreur chargement :', err);
+            }
+        }
+
+        function buildTargetInputBox(targetKey, labelText, targetValue) {
+            return `
+                <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                    <label for="target-${targetKey}" class="text-xs sm:text-sm font-semibold text-slate-200">${labelText} :</label>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" data-action="target-dec" data-target-key="${targetKey}" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold">−</button>
+                        <input id="target-${targetKey}" type="number" min="0" max="999" inputmode="numeric"
+                            data-action="target-input" data-target-key="${targetKey}" value="${targetValue || 0}"
+                            class="w-14 h-8 text-center rounded-lg bg-slate-950 border border-slate-700 focus:border-amber-400 text-white font-bold text-sm outline-none">
+                        <button type="button" data-action="target-inc" data-target-key="${targetKey}" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold">+</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildCardCheckboxHTML(categoryKey) {
+            if (!isHideSelectionMode) return '';
+            const isChecked = state.hiddenCategories.includes(categoryKey);
+            return `
+                <label class="w-24 h-8 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-amber-200 text-xs font-extrabold cursor-pointer select-none shrink-0">
+                    <input type="checkbox"
+                        data-action="instant-hide-category"
+                        data-category="${categoryKey}"
+                        ${isChecked ? 'checked' : ''}
+                        class="w-4 h-4 rounded accent-amber-400 cursor-pointer shrink-0">
+                    <span>Masquer</span>
+                </label>
+            `;
+        }
+
+        function renderHiddenCategoriesBar() {
+            const bar = document.getElementById('hidden-categories-bar');
+            if (!bar) return;
+
+            if (!Array.isArray(state.hiddenCategories) || state.hiddenCategories.length === 0) {
+                bar.innerHTML = '';
+                return;
+            }
+
+            bar.innerHTML = `
+                <div class="rounded-2xl bg-slate-900/95 border border-amber-500/40 p-3 flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-xs font-bold text-amber-300">Catégories masquées (cliquer pour réafficher) :</span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        ${state.hiddenCategories.map(cat => `
+                            <button type="button" data-action="restore-category" data-category="${cat}"
+                                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 text-xs font-extrabold text-white transition">
+                                + ${escapeHTML(CATEGORY_META[cat]?.shortName || cat)}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHeader() {
+            const player = getActivePlayer();
+            const threshold = Math.max(1, state.doubleThreshold || 10);
+            const totalReb = getTotalRebounds(player);
+
+            const histLabel = document.getElementById('toggle-history-label');
+            if (histLabel) {
+                histLabel.textContent = activeTab === 'history' ? 'Retour Match' : `Historique (${archivedMatches.length})`;
+            }
+
+            const hideBtnLabel = document.getElementById('toggle-hide-mode-label');
+            if (hideBtnLabel) {
+                hideBtnLabel.textContent = isHideSelectionMode ? 'Terminer masquage' : 'Masquer objectifs';
+            }
+
+            const notesCountEl = document.getElementById('magic-notes-count');
+            if (notesCountEl) {
+                notesCountEl.textContent = String(magicNotes.length);
+            }
+
+            const categories = [
+                { key: 'points', label: 'PTS', name: 'Points', value: player.points, reached: player.points >= threshold },
+                { key: 'rebounds', label: 'REB', name: 'Rebonds', value: totalReb, reached: totalReb >= threshold },
+                { key: 'assists', label: 'PAD', name: 'Passes', value: player.assists, reached: player.assists >= threshold },
+                { key: 'steals', label: 'INT', name: 'Interceptions', value: player.steals, reached: player.steals >= threshold },
+                { key: 'blocks', label: 'CTR', name: 'Contres', value: player.blocks, reached: player.blocks >= threshold }
+            ];
+
+            const reachedList = categories.filter(c => c.reached);
+            const count = reachedList.length;
+
+            let tierName = `En cours (${count}/5 à ${threshold}+)`;
+            let subtitle = `Atteins ${threshold}+ sur 2 catégories pour un Double-Double`;
+            let bannerStyle = 'border-slate-800 bg-slate-950/90';
+            let titleStyle = 'text-slate-300';
+            let iconStyle = 'bg-slate-800 text-slate-400';
+
+            if (count === 2) {
+                tierName = 'DOUBLE-DOUBLE VALIDÉ !';
+                subtitle = reachedList.map(c => `${c.value} ${c.name}`).join(' • ');
+                bannerStyle = 'border-emerald-500/80 bg-emerald-950/40';
+                titleStyle = 'text-emerald-300';
+                iconStyle = 'bg-emerald-500 text-slate-950';
+            } else if (count === 3) {
+                tierName = 'TRIPLE-DOUBLE VALIDÉ !';
+                subtitle = reachedList.map(c => `${c.value} ${c.name}`).join(' • ');
+                bannerStyle = 'border-amber-400 bg-amber-950/40';
+                titleStyle = 'text-amber-300';
+                iconStyle = 'bg-amber-400 text-slate-950';
+            } else if (count === 4) {
+                tierName = 'QUADRUPLE-DOUBLE HISTORIQUE !';
+                subtitle = reachedList.map(c => `${c.value} ${c.name}`).join(' • ');
+                bannerStyle = 'border-purple-400 bg-purple-950/45';
+                titleStyle = 'text-purple-200';
+                iconStyle = 'bg-purple-400 text-slate-950';
+            } else if (count === 5) {
+                tierName = 'QUINTUPLE-DOUBLE LÉGENDAIRE !';
+                subtitle = reachedList.map(c => `${c.value} ${c.name}`).join(' • ');
+                bannerStyle = 'border-yellow-300 bg-amber-950/60';
+                titleStyle = 'text-yellow-200';
+                iconStyle = 'bg-yellow-300 text-slate-950';
+            }
+
+            const banner = document.getElementById('multi-double-banner');
+            if (banner) banner.className = `rounded-xl border p-2.5 sm:p-3 mb-2.5 transition-all duration-300 ${bannerStyle}`;
+
+            const titleEl = document.getElementById('tier-title');
+            if (titleEl) {
+                titleEl.className = `text-sm sm:text-base font-black tracking-wide uppercase truncate ${titleStyle}`;
+                titleEl.textContent = tierName;
+            }
+
+            const subEl = document.getElementById('tier-subtitle');
+            if (subEl) subEl.textContent = subtitle;
+
+            const iconEl = document.getElementById('tier-icon');
+            if (iconEl) iconEl.className = `w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${iconStyle}`;
+
+            const threshValEl = document.getElementById('double-threshold-val');
+            if (threshValEl) threshValEl.textContent = String(threshold);
+
+            const pillsEl = document.getElementById('tier-pills');
+            if (pillsEl) {
+                pillsEl.innerHTML = categories.map(cat => {
+                    const pillClass = cat.reached
+                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
+                        : 'bg-slate-900/90 border-slate-800 text-slate-400';
+                    return `
+                        <div class="rounded-lg border px-1.5 py-1 text-center transition-colors ${pillClass}">
+                            <div class="text-[10px] font-extrabold tracking-wider">${cat.label}</div>
+                            <div class="text-xs sm:text-sm font-black tabular-nums">${cat.value}<span class="text-[10px] opacity-60">/${threshold}</span></div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.querySelectorAll('.player-slot-btn').forEach(btn => {
+                const slotIdx = parseInt(btn.getAttribute('data-player-slot'), 10);
+                const isActive = slotIdx === state.activePlayerIndex;
+                btn.className = isActive
+                    ? 'player-slot-btn py-2 rounded-xl font-black text-sm border bg-orange-600 border-orange-400 text-white shadow transition'
+                    : 'player-slot-btn py-2 rounded-xl font-black text-sm border bg-slate-950/80 border-slate-800 text-slate-300 hover:border-slate-700 transition';
+            });
+
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput && document.activeElement !== nameInput) {
+                nameInput.value = player.name || '';
+            }
+
+            const oppInput = document.getElementById('match-opponent-input');
+            if (oppInput && document.activeElement !== oppInput) {
+                oppInput.value = state.opponent || '';
+            }
+
+            const dateInput = document.getElementById('match-date-input');
+            if (dateInput && document.activeElement !== dateInput) {
+                dateInput.value = state.matchDate || '';
+            }
+        }
+
+        function renderStats() {
+            renderHeader();
+            renderHiddenCategoriesBar();
+
+            const player = getActivePlayer();
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+
+            // 1. Points
+            if (!state.hiddenCategories.includes('points')) {
+                const target = player.targets.points || 0;
+                const status = getStatus(player.points, target);
+                const theme = getCardTheme(status, animatedCategory === 'points');
+                const pct = target > 0 ? Math.min(100, Math.round((player.points / target) * 100)) : 0;
+
+                const sec = document.createElement('section');
+                sec.className = theme.cardClass;
+                sec.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">1. Points marqués</h2>
+                            <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                                ${target > 0 ? `<span class="text-xs font-semibold ${status === 'green' ? 'text-emerald-300' : 'text-rose-300'}">${player.points} / ${target} pts</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            <span class="text-3xl sm:text-4xl font-black tabular-nums ${theme.valueClass}">${player.points}</span>
+                            ${buildCardCheckboxHTML('points')}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2 mt-3">
+                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="-1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-base">−1</button>
+                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-extrabold text-sm">+1 LF</button>
+                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="2" class="h-11 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-base text-white">+2</button>
+                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="3" class="h-11 rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-400 font-black text-base text-white">+3</button>
+                    </div>
+                    <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
+                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${target > 0 ? Math.max(pct, player.points > 0 ? 6 : 0) : 0}%"></div>
+                    </div>
+                    ${buildTargetInputBox('points', 'Objectif Points', target)}
+                `;
+                container.appendChild(sec);
+            }
+
+            // 2. Rebonds (Offensifs + Défensifs -> Total)
+            if (!state.hiddenCategories.includes('rebounds')) {
+                const totalReb = getTotalRebounds(player);
+                const target = player.targets.rebounds || 0;
+                const status = getStatus(totalReb, target);
+                const theme = getCardTheme(status, animatedCategory === 'rebounds');
+                const pct = target > 0 ? Math.min(100, Math.round((totalReb / target) * 100)) : 0;
+                const offTarget = player.targets.offRebounds || 0;
+                const defTarget = player.targets.defRebounds || 0;
+
+                const sec = document.createElement('section');
+                sec.className = theme.cardClass;
+                sec.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">2. Rebonds (Off + Déf)</h2>
+                            <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                                ${target > 0 ? `<span class="text-xs font-semibold ${status === 'green' ? 'text-emerald-300' : 'text-rose-300'}">${totalReb} / ${target}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            <span class="text-3xl sm:text-4xl font-black tabular-nums ${theme.valueClass}">${totalReb}</span>
+                            ${buildCardCheckboxHTML('rebounds')}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                            <span class="text-xs font-extrabold text-amber-300 uppercase">Offensifs</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="stat-delta" data-stat="offRebounds" data-delta="-1" class="w-9 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                <span class="w-8 text-center text-xl font-black tabular-nums">${player.offRebounds}</span>
+                                <button type="button" data-action="stat-delta" data-stat="offRebounds" data-delta="1" class="w-11 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                            <span class="text-xs font-extrabold text-sky-300 uppercase">Défensifs</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="stat-delta" data-stat="defRebounds" data-delta="-1" class="w-9 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                <span class="w-8 text-center text-xl font-black tabular-nums">${player.defRebounds}</span>
+                                <button type="button" data-action="stat-delta" data-stat="defRebounds" data-delta="1" class="w-11 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
+                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${target > 0 ? Math.max(pct, totalReb > 0 ? 6 : 0) : 0}%"></div>
+                    </div>
+                    ${buildTargetInputBox('rebounds', 'Objectif Total Rebonds', target)}
+                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                            <label for="target-offRebounds" class="text-xs font-semibold text-amber-300">Obj. Offensifs :</label>
+                            <div class="flex items-center gap-1">
+                                <button type="button" data-action="target-dec" data-target-key="offRebounds" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">−</button>
+                                <input id="target-offRebounds" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="offRebounds" value="${offTarget}" class="w-11 h-7 text-center rounded bg-slate-900 border border-slate-700 text-white font-bold text-xs outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="offRebounds" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                            <label for="target-defRebounds" class="text-xs font-semibold text-sky-300">Obj. Défensifs :</label>
+                            <div class="flex items-center gap-1">
+                                <button type="button" data-action="target-dec" data-target-key="defRebounds" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">−</button>
+                                <input id="target-defRebounds" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="defRebounds" value="${defTarget}" class="w-11 h-7 text-center rounded bg-slate-900 border border-slate-700 text-white font-bold text-xs outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="defRebounds" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(sec);
+            }
+
+            // 3, 4, 5 : Passes, Interceptions, Contres
+            [
+                { key: 'assists', num: 3, val: player.assists, target: player.targets.assists || 0 },
+                { key: 'steals', num: 4, val: player.steals, target: player.targets.steals || 0 },
+                { key: 'blocks', num: 5, val: player.blocks, target: player.targets.blocks || 0 }
+            ].forEach(item => {
+                if (state.hiddenCategories.includes(item.key)) return;
+                const status = getStatus(item.val, item.target);
+                const theme = getCardTheme(status, animatedCategory === item.key);
+                const pct = item.target > 0 ? Math.min(100, Math.round((item.val / item.target) * 100)) : 0;
+
+                const sec = document.createElement('section');
+                sec.className = theme.cardClass;
+                sec.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">${item.num}. ${CATEGORY_META[item.key].label}</h2>
+                            <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                                ${item.target > 0 ? `<span class="text-xs font-semibold ${status === 'green' ? 'text-emerald-300' : 'text-rose-300'}">${item.val} / ${item.target}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            <span class="text-3xl sm:text-4xl font-black tabular-nums ${theme.valueClass}">${item.val}</span>
+                            ${buildCardCheckboxHTML(item.key)}
+                        </div>
+                    </div>
+                    <div class="mt-3 rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between gap-2">
+                        <span class="text-xs font-extrabold text-slate-300 uppercase">${CATEGORY_META[item.key].shortName}</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" data-action="stat-delta" data-stat="${item.key}" data-delta="-1" class="w-10 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-xl">−</button>
+                            <span class="w-9 text-center text-2xl font-black tabular-nums ${theme.valueClass}">${item.val}</span>
+                            <button type="button" data-action="stat-delta" data-stat="${item.key}" data-delta="1" class="w-12 h-11 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-xl text-white">+1</button>
+                        </div>
+                    </div>
+                    <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
+                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${item.target > 0 ? Math.max(pct, item.val > 0 ? 6 : 0) : 0}%"></div>
+                    </div>
+                    ${buildTargetInputBox(item.key, `Objectif ${CATEGORY_META[item.key].shortName}`, item.target)}
+                `;
+                container.appendChild(sec);
+            });
+
+            // 6. Dépassement de soi (Deux objectifs distincts : Sprints et Balles arrachées)
+            if (!state.hiddenCategories.includes('effort')) {
+                const totalEff = getTotalEffort(player);
+                const sprintsTarget = player.targets.sprintsTarget || 0;
+                const looseTarget = player.targets.looseBallsTarget || 0;
+                const combinedTarget = sprintsTarget + looseTarget;
+                const status = combinedTarget > 0
+                    ? ((sprintsTarget === 0 || player.sprints >= sprintsTarget) && (looseTarget === 0 || player.looseBalls >= looseTarget) ? 'green' : 'red')
+                    : 'neutral';
+                const theme = getCardTheme(status, animatedCategory === 'effort');
+                const pct = combinedTarget > 0
+                    ? Math.min(100, Math.round(((Math.min(player.sprints, sprintsTarget || player.sprints) + Math.min(player.looseBalls, looseTarget || player.looseBalls)) / combinedTarget) * 100))
+                    : 0;
+
+                const sec = document.createElement('section');
+                sec.className = theme.cardClass;
+                sec.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">6. Dépassement de soi</h2>
+                            <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                                ${sprintsTarget > 0 ? `<span class="text-xs font-semibold ${player.sprints >= sprintsTarget ? 'text-emerald-300' : 'text-amber-300'}">Sprints : ${player.sprints}/${sprintsTarget}</span>` : ''}
+                                ${looseTarget > 0 ? `<span class="text-xs font-semibold ${player.looseBalls >= looseTarget ? 'text-emerald-300' : 'text-sky-300'}">Balles arrachées : ${player.looseBalls}/${looseTarget}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            <span class="text-3xl sm:text-4xl font-black tabular-nums ${theme.valueClass}">${totalEff}</span>
+                            ${buildCardCheckboxHTML('effort')}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                            <span class="text-xs font-extrabold text-amber-300 uppercase">Sprints</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="-1" class="w-9 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                <span class="w-8 text-center text-xl font-black tabular-nums">${player.sprints}</span>
+                                <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="1" class="w-11 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                            <span class="text-xs font-extrabold text-sky-300 uppercase">Balles arrachées</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="-1" class="w-9 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                <span class="w-8 text-center text-xl font-black tabular-nums">${player.looseBalls}</span>
+                                <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="1" class="w-11 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
+                        <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${combinedTarget > 0 ? Math.max(pct, totalEff > 0 ? 6 : 0) : 0}%"></div>
+                    </div>
+                    <div class="mt-3 pt-2.5 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                            <label for="target-sprintsTarget" class="text-xs font-semibold text-amber-300">Obj. Sprints :</label>
+                            <div class="flex items-center gap-1">
+                                <button type="button" data-action="target-dec" data-target-key="sprintsTarget" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">−</button>
+                                <input id="target-sprintsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="sprintsTarget" value="${sprintsTarget}" class="w-11 h-7 text-center rounded bg-slate-900 border border-slate-700 text-white font-bold text-xs outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="sprintsTarget" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                            <label for="target-looseBallsTarget" class="text-xs font-semibold text-sky-300">Obj. Balles arrachées :</label>
+                            <div class="flex items-center gap-1">
+                                <button type="button" data-action="target-dec" data-target-key="looseBallsTarget" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">−</button>
+                                <input id="target-looseBallsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="looseBallsTarget" value="${looseTarget}" class="w-11 h-7 text-center rounded bg-slate-900 border border-slate-700 text-white font-bold text-xs outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="looseBallsTarget" class="w-7 h-7 rounded bg-slate-800 text-slate-200 text-xs font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(sec);
+            }
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            if (!archivedMatches.length) {
+                list.innerHTML = `<div class="rounded-2xl bg-slate-900 border border-slate-800 p-5 text-center text-sm text-slate-400">Aucun match archivé pour le moment.</div>`;
+                return;
+            }
+            list.innerHTML = archivedMatches.map(m => `
+                <article class="rounded-2xl bg-slate-900 border border-slate-800 p-4 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-sm sm:text-base font-extrabold text-white">${escapeHTML(m.playerName)} • ${escapeHTML(m.opponent || 'Match')}</h3>
+                            <p class="text-xs text-slate-400">${escapeHTML(m.date || '')}</p>
+                        </div>
+                        <button type="button" data-delete-match="${m.id}" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-xs text-slate-300 hover:text-rose-300">Suppr.</button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1.5 text-center text-xs">
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">PTS</div><div class="font-black">${m.points}</div></div>
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">REB</div><div class="font-black">${m.rebounds}</div></div>
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">PAD</div><div class="font-black">${m.assists}</div></div>
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">INT</div><div class="font-black">${m.steals}</div></div>
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">CTR</div><div class="font-black">${m.blocks}</div></div>
+                        <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">EFF</div><div class="font-black">${m.effort}</div></div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function setActiveTab(tab) {
+            activeTab = tab;
+            const statsMain = document.getElementById('stats-main');
+            const historyView = document.getElementById('history-view');
+            const liveFooter = document.getElementById('live-footer');
+            const banner = document.getElementById('multi-double-banner');
+            const switcher = document.getElementById('player-switcher-section');
+            const hideBtn = document.getElementById('toggle-hide-mode-btn');
+
+            if (tab === 'history') {
+                statsMain.classList.add('hidden');
+                liveFooter.classList.add('hidden');
+                banner.classList.add('hidden');
+                switcher.classList.add('hidden');
+                hideBtn.classList.add('hidden');
+                historyView.classList.remove('hidden');
+                renderHistory();
+            } else {
+                historyView.classList.add('hidden');
+                statsMain.classList.remove('hidden');
+                liveFooter.classList.remove('hidden');
+                banner.classList.remove('hidden');
+                switcher.classList.remove('hidden');
+                hideBtn.classList.remove('hidden');
+                renderStats();
+            }
+        }
+
+        function renderMagicNotes() {
+            const listEl = document.getElementById('magic-notes-list');
+            if (!magicNotes.length) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Aucune note enregistrée.</p>`;
+                return;
+            }
+            listEl.innerHTML = magicNotes.map(n => `
+                <div class="rounded-xl bg-slate-950 border border-slate-800 p-2.5 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <p class="text-xs sm:text-sm text-white break-words">${escapeHTML(n.text)}</p>
+                        <span class="text-[10px] text-slate-400">${escapeHTML(n.playerLabel || '')}</span>
+                    </div>
+                    <button type="button" data-delete-note="${n.id}" class="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs">✕</button>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAll();
+            renderStats();
+
+            document.getElementById('player-slot-buttons').addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-player-slot]');
+                if (!btn) return;
+                state.activePlayerIndex = parseInt(btn.getAttribute('data-player-slot'), 10) || 0;
+                saveAll();
+                renderStats();
+            });
+
+            document.getElementById('player-name-input').addEventListener('input', (e) => {
+                getActivePlayer().name = e.target.value;
+                saveAll();
+                renderHeader();
+            });
+
+            document.getElementById('match-opponent-input').addEventListener('input', (e) => {
+                state.opponent = e.target.value;
+                saveAll();
+            });
+
+            document.getElementById('match-date-input').addEventListener('change', (e) => {
+                state.matchDate = e.target.value;
+                saveAll();
+            });
+
+            document.getElementById('double-threshold-dec').addEventListener('click', () => {
+                state.doubleThreshold = Math.max(2, (state.doubleThreshold || 10) - 1);
+                saveAll();
+                renderStats();
+            });
+
+            document.getElementById('double-threshold-inc').addEventListener('click', () => {
+                state.doubleThreshold = Math.min(50, (state.doubleThreshold || 10) + 1);
+                saveAll();
+                renderStats();
+            });
+
+            document.getElementById('toggle-hide-mode-btn').addEventListener('click', () => {
+                isHideSelectionMode = !isHideSelectionMode;
+                renderStats();
+            });
+
+            document.getElementById('stats-main').addEventListener('click', (e) => {
+                const restoreBtn = e.target.closest('button[data-action="restore-category"]');
+                if (restoreBtn) {
+                    const cat = restoreBtn.getAttribute('data-category');
+                    state.hiddenCategories = state.hiddenCategories.filter(k => k !== cat);
+                    saveAll();
+                    renderStats();
+                    return;
+                }
+
+                const deltaBtn = e.target.closest('button[data-action="stat-delta"]');
+                if (deltaBtn) {
+                    const statKey = deltaBtn.getAttribute('data-stat');
+                    const delta = parseInt(deltaBtn.getAttribute('data-delta'), 10) || 0;
+                    const player = getActivePlayer();
+                    player[statKey] = Math.max(0, (player[statKey] || 0) + delta);
+                    saveAll();
+                    renderStats();
+                    return;
+                }
+
+                const targetBtn = e.target.closest('button[data-action="target-inc"], button[data-action="target-dec"]');
+                if (targetBtn) {
+                    const targetKey = targetBtn.getAttribute('data-target-key');
+                    const delta = targetBtn.getAttribute('data-action') === 'target-inc' ? 1 : -1;
+                    const player = getActivePlayer();
+                    player.targets[targetKey] = Math.max(0, (player.targets[targetKey] || 0) + delta);
+                    saveAll();
+                    renderStats();
+                }
+            });
+
+            document.getElementById('stats-container').addEventListener('change', (e) => {
+                const targetInput = e.target.closest('input[data-action="target-input"]');
+                if (targetInput) {
+                    const targetKey = targetInput.getAttribute('data-target-key');
+                    const parsed = parseInt(targetInput.value, 10);
+                    const player = getActivePlayer();
+                    player.targets[targetKey] = isNaN(parsed) || parsed < 0 ? 0 : Math.min(999, parsed);
+                    saveAll();
+                    renderStats();
+                    return;
+                }
+
+                const cb = e.target.closest('input[data-action="instant-hide-category"]');
+                if (!cb || !cb.checked) return;
+                const cat = cb.getAttribute('data-category');
+                if (cat && !state.hiddenCategories.includes(cat)) {
+                    state.hiddenCategories.push(cat);
+                    saveAll();
+                    renderStats();
+                    showToast(`${CATEGORY_META[cat]?.shortName || 'Catégorie'} masquée`);
+                }
+            });
+
+            document.getElementById('toggle-history-btn').addEventListener('click', () => {
+                setActiveTab(activeTab === 'live' ? 'history' : 'live');
+            });
+
+            document.getElementById('history-list').addEventListener('click', (e) => {
+                const delBtn = e.target.closest('button[data-delete-match]');
+                if (!delBtn) return;
+                const id = delBtn.getAttribute('data-delete-match');
+                archivedMatches = archivedMatches.filter(m => m.id !== id);
+                saveAll();
+                renderHistory();
+                renderHeader();
+            });
+
+            document.getElementById('archive-match-btn').addEventListener('click', () => {
+                const p = getActivePlayer();
+                archivedMatches.unshift({
+                    id: 'm_' + Date.now(),
+                    playerName: p.name || `Joueur ${state.activePlayerIndex + 1}`,
+                    opponent: state.opponent || '',
+                    date: state.matchDate || '',
+                    points: p.points,
+                    rebounds: getTotalRebounds(p),
+                    assists: p.assists,
+                    steals: p.steals,
+                    blocks: p.blocks,
+                    effort: getTotalEffort(p)
+                });
+                saveAll();
+                renderHeader();
+                showToast('Match archivé !');
+            });
+
+            document.getElementById('copy-summary-btn').addEventListener('click', () => {
+                const p = getActivePlayer();
+                const summary = [
+                    `🏀 ${p.name || `Joueur ${state.activePlayerIndex + 1}`}${state.opponent ? ` vs ${state.opponent}` : ''}`,
+                    `Points : ${p.points}`,
+                    `Rebonds : ${getTotalRebounds(p)} (${p.offRebounds} Off / ${p.defRebounds} Déf)`,
+                    `Passes : ${p.assists}`,
+                    `Interceptions : ${p.steals}`,
+                    `Contres : ${p.blocks}`,
+                    `Dépassement de soi : ${getTotalEffort(p)}`
+                ].join('\n');
+
+                const ta = document.createElement('textarea');
+                ta.value = summary;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Bilan copié !');
+                } catch (_) {
+                    showToast('Copie impossible');
+                }
+                document.body.removeChild(ta);
+            });
+
+            const resetModal = document.getElementById('reset-modal');
+            document.getElementById('reset-match-btn').addEventListener('click', () => {
+                resetModal.classList.remove('hidden');
+                resetModal.classList.add('flex');
+            });
+            document.getElementById('cancel-reset-btn').addEventListener('click', () => {
+                resetModal.classList.add('hidden');
+                resetModal.classList.remove('flex');
+            });
+            document.getElementById('confirm-reset-btn').addEventListener('click', () => {
+                state.players = state.players.map((_, idx) => ({
+                    ...createDefaultPlayer(idx),
+                    name: state.players[idx]?.name || `Joueur ${idx + 1}`
+                }));
+                saveAll();
+                renderStats();
+                resetModal.classList.add('hidden');
+                resetModal.classList.remove('flex');
+                showToast('Nouveau match : compteurs à 0');
+            });
+
+            // Notes rapides + dézoom automatique
+            const notesModal = document.getElementById('magic-notes-modal');
+            const noteInput = document.getElementById('magic-note-input');
+
+            document.getElementById('magic-notes-btn').addEventListener('click', () => {
+                renderMagicNotes();
+                notesModal.classList.remove('hidden');
+                notesModal.classList.add('flex');
+            });
+
+            function closeNotesModal() {
+                resetViewportZoom();
+                notesModal.classList.add('hidden');
+                notesModal.classList.remove('flex');
+            }
+
+            document.getElementById('close-magic-notes-btn').addEventListener('click', closeNotesModal);
+            notesModal.addEventListener('click', (e) => {
+                if (e.target === notesModal) closeNotesModal();
+            });
+
+            document.getElementById('add-magic-note-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const txt = noteInput.value.trim();
+                if (!txt) return;
+                const p = getActivePlayer();
+                magicNotes.unshift({
+                    id: 'n_' + Date.now(),
+                    text: txt,
+                    playerLabel: p.name || `Joueur ${state.activePlayerIndex + 1}`
+                });
+                noteInput.value = '';
+                saveAll();
+                renderHeader();
+                renderMagicNotes();
+                closeNotesModal();
+                showToast('Note enregistrée');
+            });
+
+            document.getElementById('magic-notes-list').addEventListener('click', (e) => {
+                const del = e.target.closest('button[data-delete-note]');
+                if (!del) return;
+                magicNotes = magicNotes.filter(n => n.id !== del.getAttribute('data-delete-note'));
+                saveAll();
+                renderHeader();
+                renderMagicNotes();
+            });
+        });
+
+        // Sécurité : si le script est évalué après DOMContentLoaded, afficher quand même les stats
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            try {
+                if (typeof renderStats === 'function' && document.getElementById('stats-container') && !document.getElementById('stats-container').innerHTML.trim()) {
+                    renderStats();
+                }
+            } catch (err) {
+                console.error('Erreur rendu immédiat :', err);
+            }
+        }
+    </script>
+</body>
+</html>
