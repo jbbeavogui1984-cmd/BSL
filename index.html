@@ -1270,13 +1270,29 @@
             const notesModal = document.getElementById('magic-notes-modal');
             const noteInput = document.getElementById('magic-note-input');
 
-            document.getElementById('magic-notes-btn').addEventListener('click', () => {
+            function openNotesModal() {
+                if (!notesModal) return;
                 renderMagicNotes();
                 notesModal.classList.remove('hidden');
                 notesModal.classList.add('flex');
+                setTimeout(() => {
+                    if (noteInput && typeof noteInput.focus === 'function') {
+                        noteInput.focus();
+                    }
+                }, 50);
+            }
+
+            // Délégation sécurisée pour ouvrir les annotations depuis le bouton BOOM!
+            document.addEventListener('click', (e) => {
+                const boomBtn = e.target.closest('#magic-notes-btn');
+                if (boomBtn) {
+                    e.preventDefault();
+                    openNotesModal();
+                }
             });
 
             function closeNotesModal() {
+                if (!notesModal) return;
                 resetViewportZoom();
                 notesModal.classList.add('hidden');
                 notesModal.classList.remove('flex');
