@@ -142,21 +142,135 @@
 
     <!-- Pied de page actions -->
     <footer id="live-footer" class="bg-slate-900 border-t border-slate-800 mt-4">
-        <div class="max-w-3xl mx-auto px-3 sm:px-4 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div class="max-w-3xl mx-auto px-3 sm:px-4 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button id="open-mvp-card-btn" type="button"
+                class="py-3.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-[0.98] text-slate-950 font-black text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
+                <span>Fiche MVP</span>
+            </button>
             <button id="archive-match-btn" type="button"
-                class="py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-amber-300 border border-amber-500/40 font-extrabold text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
                 <span>Archiver le match</span>
             </button>
             <button id="copy-summary-btn" type="button"
-                class="py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                class="py-3.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
                 <span>Copier le bilan</span>
             </button>
             <button id="reset-match-btn" type="button"
-                class="py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-rose-950/70 hover:text-rose-300 active:scale-[0.98] text-slate-300 border border-slate-700 font-semibold text-sm transition flex items-center justify-center gap-2">
+                class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-rose-950/70 hover:text-rose-300 active:scale-[0.98] text-slate-300 border border-slate-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
                 <span>Nouveau match (0)</span>
             </button>
         </div>
     </footer>
+
+    <!-- Modale Fiche Fin de Match / MVP -->
+    <div id="mvp-card-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl my-auto max-h-[92vh] overflow-y-auto space-y-3">
+            <div class="flex items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-base sm:text-lg font-extrabold text-white">Fiche Fin de Match</h2>
+                    <p class="text-[11px] text-slate-400">Condensé essentiel &amp; photo du joueur</p>
+                </div>
+                <button id="close-mvp-card-btn" type="button" aria-label="Fermer la fiche" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Visuel carte inspiré du screenshot (cadre doré + photo + stats clés) -->
+            <div id="mvp-card-preview" class="relative rounded-2xl overflow-hidden border-2 border-amber-400 bg-gradient-to-b from-slate-900 via-black to-black shadow-2xl">
+                <div class="relative h-56 sm:h-64 w-full bg-slate-950 overflow-hidden">
+                    <img id="mvp-player-photo-img" src="https://placehold.co/600x400/0f172a/facc15?text=PHOTO+JOUEUR" alt="Photo du joueur"
+                        onerror="this.onerror=null;this.src='https://placehold.co/600x400/0f172a/facc15?text=PHOTO+JOUEUR';"
+                        class="w-full h-full object-cover object-top">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent"></div>
+                    <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow">
+                        FIN DE MATCH
+                    </span>
+                    <button id="change-mvp-photo-btn" type="button"
+                        class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black text-amber-300 border border-amber-400/50 text-[11px] font-extrabold backdrop-blur-sm transition">
+                        Ajouter / Changer photo
+                    </button>
+                    <input id="mvp-photo-file-input" type="file" accept="image/*" class="hidden">
+
+                    <div class="absolute bottom-2 inset-x-3 text-center">
+                        <div id="mvp-player-name" class="text-xl sm:text-2xl font-black uppercase tracking-wide text-amber-400 drop-shadow">
+                            JOUEUR 1
+                        </div>
+                        <div id="mvp-match-scoreline" class="text-xs font-extrabold tracking-wider text-white/90 uppercase">
+                            0 – 0
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3.5 space-y-3 bg-black">
+                    <!-- Bloc Points + % des points d'équipe + détail 2 pts / 3 pts / LF -->
+                    <div class="rounded-xl border border-amber-400/35 bg-slate-950/90 p-3 space-y-2">
+                        <div class="flex items-baseline justify-between gap-2">
+                            <div>
+                                <span id="mvp-pts-big" class="text-3xl font-black text-amber-400 tabular-nums">0</span>
+                                <span class="text-xs font-black uppercase text-amber-300 ml-1">PTS</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[11px] text-slate-400 block">Part des points (Nous)</span>
+                                <span id="mvp-pts-share" class="text-base font-black text-emerald-400 tabular-nums">0%</span>
+                            </div>
+                        </div>
+                        <div id="mvp-pts-breakdown" class="grid grid-cols-3 gap-1.5 pt-2 border-t border-white/10 text-center text-xs">
+                            <div class="rounded-lg bg-slate-900 py-1 px-1.5">
+                                <span class="text-[10px] text-slate-400 block">2 pts</span>
+                                <strong id="mvp-2pts-val" class="text-orange-300 font-black">0</strong>
+                            </div>
+                            <div class="rounded-lg bg-slate-900 py-1 px-1.5">
+                                <span class="text-[10px] text-slate-400 block">3 pts</span>
+                                <strong id="mvp-3pts-val" class="text-amber-300 font-black">0</strong>
+                            </div>
+                            <div class="rounded-lg bg-slate-900 py-1 px-1.5">
+                                <span class="text-[10px] text-slate-400 block">Lancers francs</span>
+                                <strong id="mvp-ft-val" class="text-slate-200 font-black">0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats essentielles en grille -->
+                    <div class="grid grid-cols-2 gap-2 text-center">
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">% Réussite au tir</div>
+                            <div id="mvp-fg-pct" class="text-xl font-black text-amber-400 tabular-nums mt-0.5">—</div>
+                            <div id="mvp-fg-detail" class="text-[10px] text-slate-400 tabular-nums">0/0 tirs</div>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5">
+                            <div class="text-[10px] font-bold uppercase text-slate-400">Fautes provoquées</div>
+                            <div id="mvp-fouls-drawn" class="text-xl font-black text-rose-400 tabular-nums mt-0.5">0</div>
+                            <div class="text-[10px] text-slate-400">Dépassement de soi</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-1.5 text-center">
+                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
+                            <div id="mvp-reb-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
+                            <div class="text-[10px] font-bold text-slate-400">REB</div>
+                        </div>
+                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
+                            <div id="mvp-ast-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
+                            <div class="text-[10px] font-bold text-slate-400">PAD</div>
+                        </div>
+                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
+                            <div id="mvp-stl-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
+                            <div class="text-[10px] font-bold text-slate-400">INT</div>
+                        </div>
+                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
+                            <div id="mvp-blk-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
+                            <div class="text-[10px] font-bold text-slate-400">CTR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="copy-mvp-card-btn" type="button"
+                class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition">
+                Copier ce condensé texte
+            </button>
+        </div>
+    </div>
 
     <!-- Modale Notes rapides -->
     <div id="magic-notes-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
@@ -211,6 +325,7 @@
             assists: { label: 'Passes décisives', pillLabel: 'PAD', shortName: 'Passes' },
             steals: { label: 'Interceptions', pillLabel: 'INT', shortName: 'Interceptions' },
             blocks: { label: 'Contres', pillLabel: 'CTR', shortName: 'Contres' },
+            shotDetails: { label: 'Détail des points', pillLabel: 'TIR', shortName: 'Détail points' },
             effort: { label: 'Dépassement de soi', pillLabel: 'EFF', shortName: 'Dépassement' }
         };
 
@@ -221,11 +336,18 @@
                 pts1: 0,
                 pts2: 0,
                 pts3: 0,
+                ftAttempted: 0,
+                ftMade: 0,
+                fg2Attempted: 0,
+                fg2Made: 0,
+                fg3Attempted: 0,
+                fg3Made: 0,
                 offRebounds: 0,
                 defRebounds: 0,
                 assists: 0,
                 steals: 0,
                 blocks: 0,
+                foulsDrawn: 0,
                 sprints: 0,
                 looseBalls: 0,
                 targets: {
@@ -236,6 +358,7 @@
                     assists: 10,
                     steals: 10,
                     blocks: 10,
+                    foulsDrawnTarget: 0,
                     sprintsTarget: 0,
                     looseBallsTarget: 0
                 }
@@ -265,7 +388,7 @@
         let activeTab = 'live';
         let archivedMatches = [];
         let magicNotes = [];
-
+        let playerPhotos = {};
         function getActivePlayer() {
             return state.players[state.activePlayerIndex] || state.players[0];
         }
@@ -275,7 +398,7 @@
         }
 
         function getTotalEffort(player = getActivePlayer()) {
-            return (player.sprints || 0) + (player.looseBalls || 0);
+            return (player.foulsDrawn || 0) + (player.sprints || 0) + (player.looseBalls || 0);
         }
 
         function getStatus(count, target) {
@@ -343,6 +466,7 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
                 localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(archivedMatches));
                 localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(magicNotes));
+                localStorage.setItem('basket_stats_multi_photos_v1', JSON.stringify(playerPhotos));
             } catch (err) {
                 console.error('Erreur sauvegarde :', err);
             }
@@ -377,6 +501,11 @@
                 if (rawNotes) {
                     const parsedNotes = JSON.parse(rawNotes);
                     if (Array.isArray(parsedNotes)) magicNotes = parsedNotes;
+                }
+                const rawPhotos = localStorage.getItem('basket_stats_multi_photos_v1');
+                if (rawPhotos) {
+                    const parsedPhotos = JSON.parse(rawPhotos);
+                    if (parsedPhotos && typeof parsedPhotos === 'object') playerPhotos = parsedPhotos;
                 }
             } catch (err) {
                 console.error('Erreur chargement :', err);
@@ -731,15 +860,85 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-4 gap-2 mt-3">
-                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="-1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-base">−1</button>
-                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-extrabold text-sm">+1 LF</button>
-                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="2" class="h-11 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-base text-white">+2</button>
-                        <button type="button" data-action="stat-delta" data-stat="points" data-delta="3" class="h-11 rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-400 font-black text-base text-white">+3</button>
+                        <button type="button" data-action="points-delta" data-delta="-1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-base">−1</button>
+                        <button type="button" data-action="points-delta" data-delta="1" class="h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-extrabold text-sm">+1 LF</button>
+                        <button type="button" data-action="points-delta" data-delta="2" class="h-11 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-base text-white">+2</button>
+                        <button type="button" data-action="points-delta" data-delta="3" class="h-11 rounded-xl bg-amber-600 hover:bg-amber-500 border border-amber-400 font-black text-base text-white">+3</button>
                     </div>
                     <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
                         <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${target > 0 ? Math.max(pct, player.points > 0 ? 6 : 0) : 0}%"></div>
                     </div>
                     ${buildTargetInputBox('points', 'Objectif Points', target)}
+                `;
+                container.appendChild(sec);
+            }
+
+            // Détail des points (Tentés / Réussis : Lancer franc, 2 points, 3 points) - style neutre hors Double-Double
+            if (!state.hiddenCategories.includes('shotDetails')) {
+                const shotRows = [
+                    { label: 'Lancer franc', sub: '1 pt', attKey: 'ftAttempted', madeKey: 'ftMade', badgeClass: 'text-slate-200' },
+                    { label: '2 points', sub: '2 pts', attKey: 'fg2Attempted', madeKey: 'fg2Made', badgeClass: 'text-orange-300' },
+                    { label: '3 points', sub: '3 pts', attKey: 'fg3Attempted', madeKey: 'fg3Made', badgeClass: 'text-amber-300' }
+                ];
+
+                const totalAtt = (player.ftAttempted || 0) + (player.fg2Attempted || 0) + (player.fg3Attempted || 0);
+                const totalMade = (player.ftMade || 0) + (player.fg2Made || 0) + (player.fg3Made || 0);
+                const globalPct = totalAtt > 0 ? Math.round((totalMade / totalAtt) * 100) : 0;
+
+                const sec = document.createElement('section');
+                sec.className = 'rounded-2xl border border-slate-800 bg-slate-900/90 p-3.5 sm:p-4 transition-all duration-300';
+                sec.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-extrabold text-white">Détail des points</h2>
+                            <p class="text-xs text-slate-400 mt-0.5">Réussite globale : <strong class="text-slate-200">${totalMade}/${totalAtt}</strong>${totalAtt > 0 ? ` (${globalPct}%)` : ''}</p>
+                        </div>
+                        <div class="flex items-center gap-2.5 shrink-0">
+                            ${buildCardCheckboxHTML('shotDetails')}
+                        </div>
+                    </div>
+
+                    <div class="mt-3 rounded-xl bg-slate-950/75 border border-white/10 overflow-hidden">
+                        <div class="grid grid-cols-[1fr_1fr_1fr] items-center px-2.5 py-2 bg-slate-950 border-b border-white/10 text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-400">
+                            <span>Type de tir</span>
+                            <span class="text-center text-sky-300">Tenté</span>
+                            <span class="text-center text-emerald-300">Réussi</span>
+                        </div>
+
+                        <div class="divide-y divide-white/5">
+                            ${shotRows.map(row => {
+                                const attVal = player[row.attKey] || 0;
+                                const madeVal = player[row.madeKey] || 0;
+                                const pct = attVal > 0 ? Math.round((madeVal / attVal) * 100) : null;
+                                return `
+                                    <div class="grid grid-cols-[1fr_1fr_1fr] items-center gap-1.5 px-2.5 py-2.5">
+                                        <div class="min-w-0 pr-1">
+                                            <span class="text-xs sm:text-sm font-extrabold ${row.badgeClass} block truncate">${row.label}</span>
+                                            <span class="text-[10px] sm:text-[11px] text-slate-400 font-semibold">${pct !== null ? `${pct}%` : row.sub}</span>
+                                        </div>
+
+                                        <!-- Colonne Tenté -->
+                                        <div class="flex items-center justify-center gap-1 sm:gap-1.5">
+                                            <button type="button" data-action="shot-delta" data-shot-key="${row.attKey}" data-delta="-1"
+                                                class="w-7 h-8 sm:w-8 sm:h-9 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-black text-sm text-slate-200">−</button>
+                                            <span class="w-6 sm:w-7 text-center text-sm sm:text-base font-black tabular-nums text-sky-200">${attVal}</span>
+                                            <button type="button" data-action="shot-delta" data-shot-key="${row.attKey}" data-delta="1"
+                                                class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-sky-600 hover:bg-sky-500 active:scale-95 border border-sky-400 font-black text-xs sm:text-sm text-white">+1</button>
+                                        </div>
+
+                                        <!-- Colonne Réussi -->
+                                        <div class="flex items-center justify-center gap-1 sm:gap-1.5">
+                                            <button type="button" data-action="shot-delta" data-shot-key="${row.madeKey}" data-paired-att="${row.attKey}" data-delta="-1"
+                                                class="w-7 h-8 sm:w-8 sm:h-9 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-black text-sm text-slate-200">−</button>
+                                            <span class="w-6 sm:w-7 text-center text-sm sm:text-base font-black tabular-nums text-emerald-300">${madeVal}</span>
+                                            <button type="button" data-action="shot-delta" data-shot-key="${row.madeKey}" data-paired-att="${row.attKey}" data-delta="1"
+                                                class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 border border-emerald-400 font-black text-xs sm:text-sm text-white">+1</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
                 `;
                 container.appendChild(sec);
             }
@@ -892,15 +1091,17 @@
             // Dépassement de soi
             if (!state.hiddenCategories.includes('effort')) {
                 const totalEff = getTotalEffort(player);
+                const foulsDrawnVal = player.foulsDrawn || 0;
+                const foulsDrawnTarget = player.targets.foulsDrawnTarget || 0;
                 const sprintsTarget = player.targets.sprintsTarget || 0;
                 const looseTarget = player.targets.looseBallsTarget || 0;
-                const combinedTarget = sprintsTarget + looseTarget;
+                const combinedTarget = foulsDrawnTarget + sprintsTarget + looseTarget;
                 const status = combinedTarget > 0
-                    ? ((sprintsTarget === 0 || player.sprints >= sprintsTarget) && (looseTarget === 0 || player.looseBalls >= looseTarget) ? 'green' : 'red')
+                    ? ((foulsDrawnTarget === 0 || foulsDrawnVal >= foulsDrawnTarget) && (sprintsTarget === 0 || player.sprints >= sprintsTarget) && (looseTarget === 0 || player.looseBalls >= looseTarget) ? 'green' : 'red')
                     : 'neutral';
                 const theme = getCardTheme(status, animatedCategory === 'effort');
                 const pct = combinedTarget > 0
-                    ? Math.min(100, Math.round(((Math.min(player.sprints, sprintsTarget || player.sprints) + Math.min(player.looseBalls, looseTarget || player.looseBalls)) / combinedTarget) * 100))
+                    ? Math.min(100, Math.round(((Math.min(foulsDrawnVal, foulsDrawnTarget || foulsDrawnVal) + Math.min(player.sprints, sprintsTarget || player.sprints) + Math.min(player.looseBalls, looseTarget || player.looseBalls)) / combinedTarget) * 100))
                     : 0;
 
                 const sec = document.createElement('section');
@@ -910,7 +1111,8 @@
                         <div>
                             <h2 class="text-base sm:text-lg font-extrabold text-white">Dépassement de soi</h2>
                             <div class="mt-0.5 flex items-center gap-2 flex-wrap">
-                                ${sprintsTarget > 0 ? `<span class="text-xs font-semibold ${player.sprints >= sprintsTarget ? 'text-emerald-300' : 'text-amber-300'}">Sprints : ${player.sprints}/${sprintsTarget}</span>` : ''}
+                                ${foulsDrawnTarget > 0 ? `<span class="text-xs font-semibold ${foulsDrawnVal >= foulsDrawnTarget ? 'text-emerald-300' : 'text-rose-300'}">Fautes provoquées : ${foulsDrawnVal}/${foulsDrawnTarget}</span>` : ''}
+                                ${sprintsTarget > 0 ? `<span class="text-xs font-semibold ${player.sprints >= sprintsTarget ? 'text-emerald-300' : 'text-amber-300'}">Sprints défensifs : ${player.sprints}/${sprintsTarget}</span>` : ''}
                                 ${looseTarget > 0 ? `<span class="text-xs font-semibold ${player.looseBalls >= looseTarget ? 'text-emerald-300' : 'text-sky-300'}">Balles arrachées : ${player.looseBalls}/${looseTarget}</span>` : ''}
                             </div>
                         </div>
@@ -919,42 +1121,62 @@
                             ${buildCardCheckboxHTML('effort')}
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+                    <div class="space-y-2.5 mt-3">
                         <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
-                            <span class="text-xs font-extrabold text-amber-300 uppercase">Sprints</span>
+                            <span class="text-xs font-extrabold text-rose-300 uppercase">Fautes provoquées</span>
                             <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
-                                <span class="w-9 text-center text-xl font-black tabular-nums">${player.sprints}</span>
-                                <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                                <button type="button" data-action="stat-delta" data-stat="foulsDrawn" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                <span class="w-9 text-center text-xl font-black tabular-nums">${foulsDrawnVal}</span>
+                                <button type="button" data-action="stat-delta" data-stat="foulsDrawn" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
                             </div>
                         </div>
-                        <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
-                            <span class="text-xs font-extrabold text-sky-300 uppercase">Balles arrachées</span>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
-                                <span class="w-9 text-center text-xl font-black tabular-nums">${player.looseBalls}</span>
-                                <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                                <span class="text-xs font-extrabold text-amber-300 uppercase">Sprints défensifs</span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                    <span class="w-9 text-center text-xl font-black tabular-nums">${player.sprints}</span>
+                                    <button type="button" data-action="stat-delta" data-stat="sprints" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                                </div>
+                            </div>
+                            <div class="rounded-xl bg-slate-950/75 border border-white/10 p-2.5 flex items-center justify-between">
+                                <span class="text-xs font-extrabold text-sky-300 uppercase">Balles arrachées</span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="-1" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-black text-lg">−</button>
+                                    <span class="w-9 text-center text-xl font-black tabular-nums">${player.looseBalls}</span>
+                                    <button type="button" data-action="stat-delta" data-stat="looseBalls" data-delta="1" class="w-12 h-10 rounded-xl bg-orange-600 hover:bg-orange-500 border border-orange-400 font-black text-lg text-white">+1</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="mt-3 w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden">
                         <div class="h-full ${theme.barClass} transition-all duration-300" style="width:${combinedTarget > 0 ? Math.max(pct, totalEff > 0 ? 6 : 0) : 0}%"></div>
                     </div>
-                    <div class="mt-3 pt-2.5 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div class="mt-3 pt-2.5 border-t border-white/10 space-y-2">
                         <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                            <label for="target-sprintsTarget" class="text-xs font-semibold text-amber-300">Obj. Sprints :</label>
+                            <label for="target-foulsDrawnTarget" class="text-xs font-semibold text-rose-300">Obj. Fautes provoquées :</label>
                             <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" data-action="target-dec" data-target-key="sprintsTarget" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
-                                <input id="target-sprintsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="sprintsTarget" value="${sprintsTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
-                                <button type="button" data-action="target-inc" data-target-key="sprintsTarget" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                                <button type="button" data-action="target-dec" data-target-key="foulsDrawnTarget" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
+                                <input id="target-foulsDrawnTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="foulsDrawnTarget" value="${foulsDrawnTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
+                                <button type="button" data-action="target-inc" data-target-key="foulsDrawnTarget" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
                             </div>
                         </div>
-                        <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
-                            <label for="target-looseBallsTarget" class="text-xs font-semibold text-sky-300">Obj. Balles arrachées :</label>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button type="button" data-action="target-dec" data-target-key="looseBallsTarget" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
-                                <input id="target-looseBallsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="looseBallsTarget" value="${looseTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
-                                <button type="button" data-action="target-inc" data-target-key="looseBallsTarget" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <label for="target-sprintsTarget" class="text-xs font-semibold text-amber-300">Obj. Sprints défensifs :</label>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="target-dec" data-target-key="sprintsTarget" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
+                                    <input id="target-sprintsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="sprintsTarget" value="${sprintsTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
+                                    <button type="button" data-action="target-inc" data-target-key="sprintsTarget" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                                </div>
+                            </div>
+                            <div class="rounded-xl bg-slate-950/50 border border-white/5 px-2.5 py-1.5 flex items-center justify-between gap-2">
+                                <label for="target-looseBallsTarget" class="text-xs font-semibold text-sky-300">Obj. Balles arrachées :</label>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" data-action="target-dec" data-target-key="looseBallsTarget" class="w-10 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">−</button>
+                                    <input id="target-looseBallsTarget" type="number" min="0" max="999" inputmode="numeric" data-action="target-input" data-target-key="looseBallsTarget" value="${looseTarget}" class="w-9 h-8 text-center rounded-lg bg-slate-900 border border-slate-700 text-white font-black text-xs outline-none">
+                                    <button type="button" data-action="target-inc" data-target-key="looseBallsTarget" class="w-12 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-black">+</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1112,36 +1334,70 @@
                     return;
                 }
 
-                const deltaBtn = e.target.closest('button[data-action="stat-delta"]');
-                if (deltaBtn) {
-                    const statKey = deltaBtn.getAttribute('data-stat');
-                    const delta = parseInt(deltaBtn.getAttribute('data-delta'), 10) || 0;
+                const shotBtn = e.target.closest('button[data-action="shot-delta"]');
+                if (shotBtn) {
+                    const shotKey = shotBtn.getAttribute('data-shot-key');
+                    const pairedAttKey = shotBtn.getAttribute('data-paired-att');
+                    const delta = parseInt(shotBtn.getAttribute('data-delta'), 10) || 0;
                     const player = getActivePlayer();
-                    if (statKey === 'points') {
-                        if (delta === 1) {
-                            player.pts1 = (player.pts1 || 0) + 1;
-                            player.points = (player.points || 0) + 1;
-                        } else if (delta === 2) {
-                            player.pts2 = (player.pts2 || 0) + 1;
-                            player.points = (player.points || 0) + 2;
-                        } else if (delta === 3) {
-                            player.pts3 = (player.pts3 || 0) + 1;
-                            player.points = (player.points || 0) + 3;
-                        } else if (delta === -1 && (player.points || 0) > 0) {
-                            player.points = Math.max(0, (player.points || 0) - 1);
-                            if ((player.pts1 || 0) > 0) {
-                                player.pts1 -= 1;
-                            } else if ((player.pts2 || 0) > 0) {
-                                player.pts2 -= 1;
-                                player.pts1 = (player.pts1 || 0) + 1;
-                            } else if ((player.pts3 || 0) > 0) {
-                                player.pts3 -= 1;
-                                player.pts2 = (player.pts2 || 0) + 1;
-                            }
-                        }
-                    } else {
-                        player[statKey] = Math.max(0, (player[statKey] || 0) + delta);
+
+                    const prevVal = player[shotKey] || 0;
+                    const nextVal = Math.max(0, prevVal + delta);
+                    const appliedDelta = nextVal - prevVal;
+                    player[shotKey] = nextVal;
+
+                    // Si on incrémente "Réussi", "Tenté" suit automatiquement s'il était inférieur
+                    if (pairedAttKey && appliedDelta > 0 && (player[pairedAttKey] || 0) < player[shotKey]) {
+                        player[pairedAttKey] = player[shotKey];
                     }
+                    // Si on diminue "Tenté" sous "Réussi", on ajuste "Réussi" pour rester cohérent
+                    if (!pairedAttKey && appliedDelta < 0) {
+                        const madePairMap = {
+                            ftAttempted: 'ftMade',
+                            fg2Attempted: 'fg2Made',
+                            fg3Attempted: 'fg3Made'
+                        };
+                        const correspondingMade = madePairMap[shotKey];
+                        if (correspondingMade && (player[correspondingMade] || 0) > player[shotKey]) {
+                            const madeDiff = player[shotKey] - (player[correspondingMade] || 0);
+                            player[correspondingMade] = player[shotKey];
+                            syncPointsFromMadeChange(player, correspondingMade, madeDiff);
+                        }
+                    }
+
+                    // Synchronisation automatique vers "Points marqués" quand "Réussi" change
+                    if (pairedAttKey && appliedDelta !== 0) {
+                        syncPointsFromMadeChange(player, shotKey, appliedDelta);
+                    }
+
+                    saveAll();
+                    renderStats();
+                    return;
+                }
+
+                const ptsBtn = e.target.closest('button[data-action="points-delta"]');
+                if (ptsBtn) {
+                    const delta = parseInt(ptsBtn.getAttribute('data-delta'), 10) || 0;
+                    const player = getActivePlayer();
+                    applyDirectPointsChange(player, delta);
+                    saveAll();
+                    renderStats();
+                    return;
+                }
+
+                const statBtn = e.target.closest('button[data-action="stat-delta"]');
+                if (statBtn) {
+                    const statKey = statBtn.getAttribute('data-stat');
+                    const delta = parseInt(statBtn.getAttribute('data-delta'), 10) || 0;
+                    const player = getActivePlayer();
+                    const prevVal = player[statKey] || 0;
+                    const nextVal = Math.max(0, prevVal + delta);
+                    player[statKey] = nextVal;
+
+                    if (delta > 0 && nextVal > prevVal) {
+                        checkGoalCelebration(player, statKey);
+                    }
+
                     saveAll();
                     renderStats();
                     return;
@@ -1157,6 +1413,81 @@
                     renderStats();
                 }
             });
+
+            function checkGoalCelebration(player, categoryOrStat) {
+                const mapToCat = {
+                    points: 'points',
+                    offRebounds: 'rebounds',
+                    defRebounds: 'rebounds',
+                    assists: 'assists',
+                    steals: 'steals',
+                    blocks: 'blocks',
+                    foulsDrawn: 'effort',
+                    sprints: 'effort',
+                    looseBalls: 'effort'
+                };
+                const cat = mapToCat[categoryOrStat] || categoryOrStat;
+                if (cat === 'points' && player.targets.points > 0 && player.points === player.targets.points) {
+                    animatedCategory = 'points';
+                    setTimeout(() => { animatedCategory = null; }, 400);
+                }
+            }
+
+            // Met à jour Points marqués (+1 LF, +2, +3 et Total) à partir de Détail des points
+            function syncPointsFromMadeChange(player, madeKey, deltaCount) {
+                const config = {
+                    ftMade: { ptsField: 'pts1', value: 1 },
+                    fg2Made: { ptsField: 'pts2', value: 2 },
+                    fg3Made: { ptsField: 'pts3', value: 3 }
+                }[madeKey];
+                if (!config) return;
+
+                player[config.ptsField] = Math.max(0, (player[config.ptsField] || 0) + deltaCount);
+                const prevPts = player.points || 0;
+                player.points = Math.max(0, prevPts + deltaCount * config.value);
+
+                if (deltaCount > 0 && player.targets.points > 0 && prevPts < player.targets.points && player.points >= player.targets.points) {
+                    animatedCategory = 'points';
+                    setTimeout(() => { animatedCategory = null; }, 400);
+                }
+            }
+
+            // Met à jour Points marqués ET synchronise Détail des points si cliqué depuis Points marqués
+            function applyDirectPointsChange(player, delta) {
+                if (delta === 1 || delta === 2 || delta === 3) {
+                    const map = {
+                        1: { ptsField: 'pts1', madeKey: 'ftMade', attKey: 'ftAttempted' },
+                        2: { ptsField: 'pts2', madeKey: 'fg2Made', attKey: 'fg2Attempted' },
+                        3: { ptsField: 'pts3', madeKey: 'fg3Made', attKey: 'fg3Attempted' }
+                    }[delta];
+
+                    player[map.ptsField] = (player[map.ptsField] || 0) + 1;
+                    player[map.madeKey] = (player[map.madeKey] || 0) + 1;
+                    if ((player[map.attKey] || 0) < player[map.madeKey]) {
+                        player[map.attKey] = player[map.madeKey];
+                    }
+                    const prevPts = player.points || 0;
+                    player.points = prevPts + delta;
+
+                    if (player.targets.points > 0 && prevPts < player.targets.points && player.points >= player.targets.points) {
+                        animatedCategory = 'points';
+                        setTimeout(() => { animatedCategory = null; }, 400);
+                    }
+                } else if (delta === -1) {
+                    if ((player.points || 0) <= 0) return;
+                    player.points = Math.max(0, (player.points || 0) - 1);
+                    if ((player.pts1 || 0) > 0) {
+                        player.pts1 -= 1;
+                        if ((player.ftMade || 0) > 0) player.ftMade -= 1;
+                    } else if ((player.pts2 || 0) > 0) {
+                        player.pts2 -= 1;
+                        if ((player.fg2Made || 0) > 0) player.fg2Made -= 1;
+                    } else if ((player.pts3 || 0) > 0) {
+                        player.pts3 -= 1;
+                        if ((player.fg3Made || 0) > 0) player.fg3Made -= 1;
+                    }
+                }
+            }
 
             document.getElementById('stats-container').addEventListener('change', (e) => {
                 const targetInput = e.target.closest('input[data-action="target-input"]');
@@ -1328,6 +1659,132 @@
                 saveAll();
                 renderHeader();
                 renderMagicNotes();
+            });
+
+            // Modale Fiche Fin de Match / MVP
+            const mvpModal = document.getElementById('mvp-card-modal');
+            const mvpPhotoImg = document.getElementById('mvp-player-photo-img');
+            const mvpPhotoInput = document.getElementById('mvp-photo-file-input');
+
+            function getPlayerShotStats(player) {
+                // Utilise les tirs réussis/tentés enregistrés, avec repli sur pts2/pts3/pts1 si l'utilisateur a saisi uniquement dans Points marqués
+                const made2 = (player.fg2Made || 0) > 0 ? (player.fg2Made || 0) : Math.floor((player.pts2 || 0) / 2);
+                const att2 = Math.max(player.fg2Attempted || 0, made2);
+
+                const made3 = (player.fg3Made || 0) > 0 ? (player.fg3Made || 0) : Math.floor((player.pts3 || 0) / 3);
+                const att3 = Math.max(player.fg3Attempted || 0, made3);
+
+                const madeFt = (player.ftMade || 0) > 0 ? (player.ftMade || 0) : (player.pts1 || 0);
+                const attFt = Math.max(player.ftAttempted || 0, madeFt);
+
+                const totalMade = made2 + made3 + madeFt;
+                const totalAtt = att2 + att3 + attFt;
+                const pct = totalAtt > 0 ? Math.round((totalMade / totalAtt) * 100) : null;
+
+                return { made2, made3, madeFt, totalMade, totalAtt, pct };
+            }
+
+            function renderMvpCard() {
+                const p = getActivePlayer();
+                const slotKey = String(state.activePlayerIndex);
+                const playerLabel = (p.name || `Joueur ${state.activePlayerIndex + 1}`).toUpperCase();
+                const teamTotalPts = Math.max(state.scoreUs || 0, p.points || 0);
+                const ptsShare = teamTotalPts > 0 ? Math.round(((p.points || 0) / teamTotalPts) * 100) : 0;
+                const shots = getPlayerShotStats(p);
+
+                document.getElementById('mvp-player-name').textContent = playerLabel;
+                document.getElementById('mvp-match-scoreline').textContent = state.opponent
+                    ? `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} ${state.opponent.toUpperCase()}`
+                    : `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} EUX`;
+
+                document.getElementById('mvp-pts-big').textContent = String(p.points || 0);
+                document.getElementById('mvp-pts-share').textContent = `${ptsShare}%`;
+                document.getElementById('mvp-2pts-val').textContent = `${p.pts2 || 0} pts (${shots.made2})`;
+                document.getElementById('mvp-3pts-val').textContent = `${p.pts3 || 0} pts (${shots.made3})`;
+                document.getElementById('mvp-ft-val').textContent = `${p.pts1 || 0} pt (${shots.madeFt})`;
+
+                document.getElementById('mvp-fg-pct').textContent = shots.pct !== null ? `${shots.pct}%` : '—';
+                document.getElementById('mvp-fg-detail').textContent = `${shots.totalMade}/${shots.totalAtt} shoots`;
+                document.getElementById('mvp-fouls-drawn').textContent = String(p.foulsDrawn || 0);
+
+                document.getElementById('mvp-reb-val').textContent = String(getTotalRebounds(p));
+                document.getElementById('mvp-ast-val').textContent = String(p.assists || 0);
+                document.getElementById('mvp-stl-val').textContent = String(p.steals || 0);
+                document.getElementById('mvp-blk-val').textContent = String(p.blocks || 0);
+
+                if (playerPhotos[slotKey]) {
+                    mvpPhotoImg.src = playerPhotos[slotKey];
+                } else {
+                    mvpPhotoImg.src = `https://placehold.co/600x400/0f172a/facc15?text=${encodeURIComponent(playerLabel)}`;
+                }
+            }
+
+            document.getElementById('open-mvp-card-btn').addEventListener('click', () => {
+                renderMvpCard();
+                mvpModal.classList.remove('hidden');
+                mvpModal.classList.add('flex');
+            });
+
+            function closeMvpModal() {
+                resetViewportZoom();
+                mvpModal.classList.add('hidden');
+                mvpModal.classList.remove('flex');
+            }
+
+            document.getElementById('close-mvp-card-btn').addEventListener('click', closeMvpModal);
+            mvpModal.addEventListener('click', (e) => {
+                if (e.target === mvpModal) closeMvpModal();
+            });
+
+            document.getElementById('change-mvp-photo-btn').addEventListener('click', () => {
+                mvpPhotoInput.click();
+            });
+
+            mvpPhotoInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        playerPhotos[String(state.activePlayerIndex)] = String(reader.result || '');
+                        saveAll();
+                        renderMvpCard();
+                        showToast('Photo ajoutée à la fiche');
+                    } catch (err) {
+                        console.error('Erreur photo :', err);
+                        showToast('Image trop lourde');
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+
+            document.getElementById('copy-mvp-card-btn').addEventListener('click', () => {
+                const p = getActivePlayer();
+                const teamTotalPts = Math.max(state.scoreUs || 0, p.points || 0);
+                const ptsShare = teamTotalPts > 0 ? Math.round(((p.points || 0) / teamTotalPts) * 100) : 0;
+                const shots = getPlayerShotStats(p);
+                const text = [
+                    `⭐ FICHE MATCH — ${(p.name || `Joueur ${state.activePlayerIndex + 1}`).toUpperCase()}`,
+                    `Score : Nous ${state.scoreUs || 0} – ${state.scoreThem || 0} ${state.opponent || 'Eux'}`,
+                    `Points : ${p.points || 0} PTS (${ptsShare}% des points Nous) — 2 pts : ${p.pts2 || 0} | 3 pts : ${p.pts3 || 0} | LF : ${p.pts1 || 0}`,
+                    `Réussite au shoot : ${shots.pct !== null ? `${shots.pct}%` : '—'} (${shots.totalMade}/${shots.totalAtt})`,
+                    `Fautes provoquées : ${p.foulsDrawn || 0}`,
+                    `REB : ${getTotalRebounds(p)} | PAD : ${p.assists || 0} | INT : ${p.steals || 0} | CTR : ${p.blocks || 0}`
+                ].join('\n');
+
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Condensé copié !');
+                } catch (_) {
+                    showToast('Copie impossible');
+                }
+                document.body.removeChild(ta);
             });
         });
 
