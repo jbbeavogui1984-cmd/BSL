@@ -34,19 +34,6 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-orange-500 selection:text-white">
 
-    <!-- Bouton flottant fixe côté gauche, vers le milieu de l'écran (grande flamme avec compteur centré) -->
-    <button id="magic-notes-btn" type="button" aria-label="Notes rapides du match"
-        class="fixed left-3 top-1/2 -translate-y-1/2 z-30 w-14 h-16 p-1.5 rounded-2xl bg-gradient-to-b from-amber-500 via-orange-600 to-rose-700 hover:from-amber-400 hover:via-orange-500 hover:to-rose-600 active:scale-95 text-white border border-amber-300/60 shadow-xl shadow-orange-950/60 flex items-center justify-center transition select-none">
-        <span class="relative flex items-center justify-center w-full h-full">
-            <!-- Grande flamme centrée -->
-            <svg class="w-11 h-12 mx-auto text-amber-200 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13.5 2.2c.3 2.8-1.4 4.7-2.8 6.2-1.1 1.2-1.9 2.3-1.9 3.9 0 .4.1.8.2 1.2-.9-.5-1.6-1.4-1.8-2.5-1.7 1.6-2.7 3.8-2.7 6.1 0 4.4 3.5 7.8 7.9 7.8 4.6 0 8.1-3.5 8.1-8.2 0-4.2-2.6-7.6-5.1-13.8z"/>
-            </svg>
-            <!-- Compteur centré dans le corps de la flamme -->
-            <span id="magic-notes-count" class="absolute inset-0 flex items-center justify-center pt-3 pr-0.5 text-xs font-black leading-none text-slate-950 tabular-nums drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">0</span>
-        </span>
-    </button>
-
     <!-- En-tête de l'application -->
     <div class="bg-slate-900 border-b border-slate-800 z-20">
         <div class="max-w-3xl mx-auto px-3.5 sm:px-4 pt-3 pb-2.5">
@@ -662,16 +649,31 @@
                     </div>
                 </div>
 
-                <!-- Ligne 3 : Boutons -1 de part et d'autre -->
-                <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
-                    <button type="button" data-action="match-score" data-team="${leftTeam.team}" data-delta="-1" title="Corriger -1 ${leftTeam.label}"
-                        class="w-full h-9 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 font-black flex items-center justify-center gap-1.5">
-                        <span class="text-base sm:text-lg leading-none">−1</span><span class="text-xs sm:text-sm ${leftTeam.minusLabelClass} font-extrabold">(${leftTeam.label})</span>
+                <!-- Ligne 3 : Boutons -1 (réduits de moitié) + Bouton flamme centré au milieu -->
+                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+                    <div class="flex justify-start">
+                        <button type="button" data-action="match-score" data-team="${leftTeam.team}" data-delta="-1" title="Corriger -1 ${leftTeam.label}"
+                            class="w-3/5 sm:w-1/2 h-9 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 font-black flex items-center justify-center gap-1">
+                            <span class="text-base sm:text-lg leading-none">−1</span><span class="text-xs sm:text-sm ${leftTeam.minusLabelClass} font-extrabold">(${leftTeam.label})</span>
+                        </button>
+                    </div>
+
+                    <button id="magic-notes-btn" type="button" aria-label="Notes rapides du match" title="Notes rapides du match"
+                        class="w-12 h-10 sm:w-14 sm:h-11 rounded-xl bg-gradient-to-b from-amber-500 via-orange-600 to-rose-700 hover:from-amber-400 hover:via-orange-500 hover:to-rose-600 active:scale-95 text-white border border-amber-300/60 shadow-lg shadow-orange-950/50 flex items-center justify-center transition select-none shrink-0">
+                        <span class="relative flex items-center justify-center w-full h-full">
+                            <svg class="w-8 h-8 sm:w-9 sm:h-9 mx-auto text-amber-200 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13.5 2.2c.3 2.8-1.4 4.7-2.8 6.2-1.1 1.2-1.9 2.3-1.9 3.9 0 .4.1.8.2 1.2-.9-.5-1.6-1.4-1.8-2.5-1.7 1.6-2.7 3.8-2.7 6.1 0 4.4 3.5 7.8 7.9 7.8 4.6 0 8.1-3.5 8.1-8.2 0-4.2-2.6-7.6-5.1-13.8z"/>
+                            </svg>
+                            <span id="magic-notes-count" class="absolute inset-0 flex items-center justify-center pt-2 pr-0.5 text-[11px] font-black leading-none text-slate-950 tabular-nums drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]">${magicNotes.length}</span>
+                        </span>
                     </button>
-                    <button type="button" data-action="match-score" data-team="${rightTeam.team}" data-delta="-1" title="Corriger -1 ${rightTeam.label}"
-                        class="w-full h-9 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 font-black flex items-center justify-center gap-1.5">
-                        <span class="text-base sm:text-lg leading-none">−1</span><span class="text-xs sm:text-sm ${rightTeam.minusLabelClass} font-extrabold">(${rightTeam.label})</span>
-                    </button>
+
+                    <div class="flex justify-end">
+                        <button type="button" data-action="match-score" data-team="${rightTeam.team}" data-delta="-1" title="Corriger -1 ${rightTeam.label}"
+                            class="w-3/5 sm:w-1/2 h-9 sm:h-10 rounded-xl bg-slate-800/90 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 font-black flex items-center justify-center gap-1">
+                            <span class="text-base sm:text-lg leading-none">−1</span><span class="text-xs sm:text-sm ${rightTeam.minusLabelClass} font-extrabold">(${rightTeam.label})</span>
+                        </button>
+                    </div>
                 </div>
             `;
         }
