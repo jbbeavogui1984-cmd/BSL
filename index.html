@@ -649,7 +649,7 @@
                     </div>
                 </div>
 
-                <!-- Ligne 3 : Boutons -1 (réduits de moitié) + Bouton flamme centré au milieu -->
+                <!-- Ligne 3 : Boutons -1 (réduits de moitié) + Bouton BOOM! sur fond blanc centré au milieu -->
                 <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
                     <div class="flex justify-start">
                         <button type="button" data-action="match-score" data-team="${leftTeam.team}" data-delta="-1" title="Corriger -1 ${leftTeam.label}"
@@ -659,13 +659,27 @@
                     </div>
 
                     <button id="magic-notes-btn" type="button" aria-label="Notes rapides du match" title="Notes rapides du match"
-                        class="w-12 h-10 sm:w-14 sm:h-11 rounded-xl bg-gradient-to-b from-amber-500 via-orange-600 to-rose-700 hover:from-amber-400 hover:via-orange-500 hover:to-rose-600 active:scale-95 text-white border border-amber-300/60 shadow-lg shadow-orange-950/50 flex items-center justify-center transition select-none shrink-0">
-                        <span class="relative flex items-center justify-center w-full h-full">
-                            <svg class="w-8 h-8 sm:w-9 sm:h-9 mx-auto text-amber-200 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M13.5 2.2c.3 2.8-1.4 4.7-2.8 6.2-1.1 1.2-1.9 2.3-1.9 3.9 0 .4.1.8.2 1.2-.9-.5-1.6-1.4-1.8-2.5-1.7 1.6-2.7 3.8-2.7 6.1 0 4.4 3.5 7.8 7.9 7.8 4.6 0 8.1-3.5 8.1-8.2 0-4.2-2.6-7.6-5.1-13.8z"/>
-                            </svg>
-                            <span id="magic-notes-count" class="absolute inset-0 flex items-center justify-center pt-2 pr-0.5 text-[11px] font-black leading-none text-slate-950 tabular-nums drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]">${magicNotes.length}</span>
-                        </span>
+                        class="relative w-16 h-10 sm:w-20 sm:h-11 rounded-xl bg-white hover:bg-slate-100 active:scale-95 border-2 border-slate-300 shadow-lg flex items-center justify-center transition select-none shrink-0 overflow-visible">
+                        <svg class="w-15 h-10 sm:w-18 sm:h-11 overflow-visible" viewBox="0 0 120 76" aria-hidden="true">
+                            <!-- Halftone dots style comic sur fond blanc -->
+                            <g fill="#0284c7" opacity="0.28">
+                                <circle cx="38" cy="14" r="2.2"/><circle cx="48" cy="11" r="2.4"/><circle cx="58" cy="10" r="2.6"/><circle cx="68" cy="11" r="2.4"/><circle cx="78" cy="14" r="2.2"/>
+                                <circle cx="34" cy="21" r="2.4"/><circle cx="84" cy="21" r="2.4"/>
+                                <circle cx="42" cy="63" r="2.2"/><circle cx="52" cy="65" r="2.4"/><circle cx="62" cy="65" r="2.4"/><circle cx="72" cy="63" r="2.2"/>
+                            </g>
+                            <!-- Ombre noire décalée de l'étoile -->
+                            <polygon points="61,6 70,22 93,10 82,28 113,34 86,44 108,66 74,52 67,71 56,53 39,69 43,50 11,46 39,35 20,14 48,24"
+                                fill="#0f172a" transform="translate(2.5, 3)"/>
+                            <!-- Étoile d'explosion jaune sans contour rouge -->
+                            <polygon points="61,6 70,22 93,10 82,28 113,34 86,44 108,66 74,52 67,71 56,53 39,69 43,50 11,46 39,35 20,14 48,24"
+                                fill="#facc15"/>
+                            <!-- Texte BOOM! rouge avec ombre noire -->
+                            <g transform="rotate(-7 60 39)">
+                                <text x="61.5" y="47.5" text-anchor="middle" font-family="Inter, Impact, sans-serif" font-weight="900" font-style="italic" font-size="25" letter-spacing="-0.5" fill="#0f172a">BOOM!</text>
+                                <text x="59.5" y="45.5" text-anchor="middle" font-family="Inter, Impact, sans-serif" font-weight="900" font-style="italic" font-size="25" letter-spacing="-0.5" fill="#dc2626" stroke="#7f1d1d" stroke-width="0.6">BOOM!</text>
+                            </g>
+                        </svg>
+                        <span id="magic-notes-count" class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 border border-white text-[10px] font-black leading-none text-white flex items-center justify-center tabular-nums shadow">${magicNotes.length}</span>
                     </button>
 
                     <div class="flex justify-end">
