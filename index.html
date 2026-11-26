@@ -169,10 +169,16 @@
     <div id="mvp-card-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl max-h-[92vh] overflow-y-auto space-y-3">
             <div class="flex items-center justify-between gap-2">
-                <div>
-                    <h2 class="text-base sm:text-lg font-black text-white">Fiche joueur</h2>
-                    <p class="text-xs text-slate-400">Bilan du match & photo du joueur</p>
-                </div>
+                <button id="change-club-logo-btn" type="button" title="Appuyer pour ajouter ou changer le logo du club"
+                    class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 hover:border-lime-400 overflow-hidden flex items-center justify-center shadow-lg transition shrink-0 cursor-pointer">
+                    <img id="club-logo-img" src="" alt="Logo du club" class="hidden w-full h-full object-cover">
+                    <div id="club-logo-placeholder" class="flex flex-col items-center justify-center text-slate-300">
+                        <span class="text-lg font-black leading-none text-lime-400">+</span>
+                        <span class="text-[11px] font-black uppercase tracking-wider mt-0.5">CLUB</span>
+                    </div>
+                </button>
+                <input id="club-logo-file-input" type="file" accept="image/*" class="hidden">
+
                 <button id="close-mvp-card-btn" type="button" aria-label="Fermer la fiche joueur"
                     class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">
                     ✕
@@ -181,18 +187,18 @@
 
             <!-- Visuel carte inspiré du HUD NBA 2K (encart photo + bandeau Game Stats + hexagone note) -->
             <div id="mvp-card-preview" class="relative rounded-2xl overflow-hidden border-2 border-lime-400/85 bg-black shadow-2xl">
-                <!-- Partie sombre du haut avec encart photo et bandeau Game Stats -->
-                <div class="bg-gradient-to-b from-slate-900 via-slate-950 to-black p-3.5 pt-3 border-b border-white/10 space-y-2.5">
+                <!-- Partie sombre du haut avec encart photo et bandeau Stats -->
+                <div class="bg-gradient-to-b from-slate-900 via-slate-950 to-black p-3.5 pt-4 border-b border-white/10 space-y-3">
                     <div class="flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-wider">
-                        <span class="text-lime-400">● GAME STATS</span>
+                        <span class="text-lime-400 shrink-0">● GAME STATS</span>
                         <span id="mvp-match-scoreline" class="text-slate-300 truncate">NOUS 0 – 0 EUX</span>
                     </div>
 
                     <!-- Bandeau HUD Style 2K -->
-                    <div class="relative flex items-center pt-3">
+                    <div class="relative flex items-center pt-5">
                         <!-- Encart Photo Portrait à gauche -->
                         <div id="change-mvp-photo-box" title="Appuyer pour ajouter ou changer la photo"
-                            class="relative z-20 w-20 h-24 sm:w-24 sm:h-28 rounded-2xl bg-slate-900 border-2 border-lime-400 shadow-xl overflow-hidden shrink-0 cursor-pointer">
+                            class="relative z-20 w-20 h-28 sm:w-24 sm:h-32 rounded-2xl bg-slate-900 border-2 border-lime-400 shadow-xl overflow-hidden shrink-0 cursor-pointer">
                             <img id="mvp-player-photo-img" src="https://placehold.co/240x280/0f172a/a3e635?text=PHOTO" alt="Photo du joueur"
                                 onerror="this.onerror=null;this.src='https://placehold.co/240x280/0f172a/a3e635?text=PHOTO';"
                                 class="w-full h-full object-cover object-top">
@@ -204,39 +210,34 @@
                         <input id="mvp-photo-file-input" type="file" accept="image/*" class="hidden">
 
                         <!-- Barre noire + bordure verte néon avec Prénom en onglet et Stats -->
-                        <div class="flex-1 -ml-3 pl-5 pr-2 py-2 bg-black border-y-2 border-lime-400 rounded-r-xl shadow-lg relative min-w-0">
-                            <!-- Onglet Prénom + Game Stats au-dessus -->
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 -mt-6 mb-1.5 bg-black border-t-2 border-x-2 border-lime-400 rounded-t-lg max-w-full">
-                                <span id="mvp-player-name" class="text-xs sm:text-sm font-black italic uppercase tracking-wide text-white truncate">JOUEUR 1</span>
-                                <span class="text-[9px] font-extrabold uppercase text-lime-400 shrink-0">• Game Stats</span>
+                        <div class="flex-1 -ml-3 pl-5 pr-2 py-2.5 bg-black border-y-2 border-r-2 border-lime-400 rounded-r-xl shadow-lg relative min-w-0">
+                            <!-- Onglet Prénom ouvert à droite pour laisser toute la largeur au nom complet -->
+                            <div class="flex items-center w-full pl-2.5 pr-1 py-0.5 -mt-7 mb-2 bg-black border-t-2 border-l-2 border-lime-400 rounded-tl-lg">
+                                <span id="mvp-player-name" class="text-xs sm:text-sm font-black italic uppercase tracking-wide text-white whitespace-nowrap">JOUEUR 1</span>
                             </div>
 
-                            <!-- Colonnes PTS / REB / PAD / INT -->
-                            <div class="grid grid-cols-4 gap-1 text-center">
+                            <!-- Colonnes PTS / REB / ASS / INT / CTR -->
+                            <div class="grid grid-cols-5 gap-1 text-center">
                                 <div>
-                                    <div class="text-[10px] font-black italic text-slate-300">PTS</div>
-                                    <div id="mvp-hud-pts" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                    <div class="text-[9px] sm:text-[10px] font-black italic text-slate-300">PTS</div>
+                                    <div id="mvp-hud-pts" class="mt-0.5 py-1.5 rounded bg-slate-700/85 text-xs sm:text-sm font-black italic text-white tabular-nums">0</div>
                                 </div>
                                 <div>
-                                    <div class="text-[10px] font-black italic text-slate-300">REB</div>
-                                    <div id="mvp-reb-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                    <div class="text-[9px] sm:text-[10px] font-black italic text-slate-300">REB</div>
+                                    <div id="mvp-reb-val" class="mt-0.5 py-1.5 rounded bg-slate-700/85 text-xs sm:text-sm font-black italic text-white tabular-nums">0</div>
                                 </div>
                                 <div>
-                                    <div class="text-[10px] font-black italic text-slate-300">PAD</div>
-                                    <div id="mvp-ast-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                    <div class="text-[9px] sm:text-[10px] font-black italic text-slate-300">ASS</div>
+                                    <div id="mvp-ast-val" class="mt-0.5 py-1.5 rounded bg-slate-700/85 text-xs sm:text-sm font-black italic text-white tabular-nums">0</div>
                                 </div>
                                 <div>
-                                    <div class="text-[10px] font-black italic text-slate-300">INT</div>
-                                    <div id="mvp-stl-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                    <div class="text-[9px] sm:text-[10px] font-black italic text-slate-300">INT</div>
+                                    <div id="mvp-stl-val" class="mt-0.5 py-1.5 rounded bg-slate-700/85 text-xs sm:text-sm font-black italic text-white tabular-nums">0</div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Hexagone Note du match à droite -->
-                        <div class="relative z-20 -ml-2 w-14 h-16 sm:w-16 sm:h-18 bg-lime-400 hex-badge flex items-center justify-center p-[2.5px] shrink-0 shadow-lg">
-                            <div class="w-full h-full bg-black hex-badge flex flex-col items-center justify-center">
-                                <span id="mvp-grade-letter" class="text-lg sm:text-xl font-black text-white leading-none">B</span>
-                                <span class="text-[7px] font-black uppercase text-lime-400 tracking-tighter">NOTE</span>
+                                <div>
+                                    <div class="text-[9px] sm:text-[10px] font-black italic text-slate-300">CTR</div>
+                                    <div id="mvp-hud-blk-val" class="mt-0.5 py-1.5 rounded bg-slate-700/85 text-xs sm:text-sm font-black italic text-white tabular-nums">0</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -251,16 +252,37 @@
 
                 <!-- Partie inférieure : Condensé précis -->
                 <div class="p-3.5 space-y-2.5 bg-black">
-                    <!-- Bloc Points + % des points d'équipe + détail 2 pts / 3 pts / LF -->
+                    <!-- Bloc Points + % des points d'équipe + hexagone note à droite + détail 2 pts / 3 pts / LF -->
                     <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5 space-y-2">
-                        <div class="flex items-baseline justify-between gap-2">
+                        <div class="flex items-center justify-between gap-2">
                             <div>
                                 <span id="mvp-pts-big" class="text-2xl font-black text-lime-400 tabular-nums">0</span>
                                 <span class="text-xs font-black uppercase text-slate-300 ml-1">PTS</span>
                             </div>
-                            <div class="text-right">
-                                <span class="text-[10px] text-slate-400 block">Part des points (Nous)</span>
-                                <span id="mvp-pts-share" class="text-sm font-black text-emerald-400 tabular-nums">0%</span>
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <div class="text-right">
+                                    <span class="text-[10px] text-slate-400 block">Part des points (Nous)</span>
+                                    <span id="mvp-pts-share" class="text-sm font-black text-emerald-400 tabular-nums">0%</span>
+                                </div>
+                                <!-- Hexagone Note du match à droite des points (sans inscription NOTE) -->
+                                <div id="mvp-grade-badge" class="w-11 h-12 sm:w-12 sm:h-14 bg-lime-400 hex-badge flex items-center justify-center p-[2px] shrink-0 shadow-lg">
+                                    <div class="w-full h-full bg-black hex-badge flex items-center justify-center">
+                                        <span id="mvp-grade-letter" class="text-base sm:text-lg font-black text-white leading-none">B</span>
+                                    </div>
+                                </div>
+                                <!-- Petit bouton pour masquer / afficher la note -->
+                                <button id="toggle-mvp-grade-btn" type="button" title="Masquer ou afficher la note" aria-label="Masquer ou afficher la note"
+                                    class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 transition">
+                                    <svg id="mvp-grade-eye-open" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    <svg id="mvp-grade-eye-off" class="w-3.5 h-3.5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                                        <line x1="1" y1="1" x2="23" y2="23"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                         <div id="mvp-pts-breakdown" class="grid grid-cols-3 gap-1.5 pt-2 border-t border-white/10 text-center text-xs">
@@ -273,7 +295,7 @@
                                 <strong id="mvp-3pts-val" class="text-amber-300 font-black">0</strong>
                             </div>
                             <div class="rounded-lg bg-slate-900 py-1 px-1.5">
-                                <span class="text-[10px] text-slate-400 block">Lancers francs</span>
+                                <span class="text-[10px] text-slate-400 block">LF</span>
                                 <strong id="mvp-ft-val" class="text-slate-200 font-black">0</strong>
                             </div>
                         </div>
@@ -282,19 +304,18 @@
                     <!-- Stats essentielles en grille -->
                     <div class="grid grid-cols-3 gap-1.5 text-center">
                         <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
-                            <div class="text-[9px] font-bold uppercase text-slate-400">% Shoot</div>
+                            <div class="text-[9px] font-bold uppercase text-slate-400">% Shoot réussis</div>
                             <div id="mvp-fg-pct" class="text-base sm:text-lg font-black text-lime-400 tabular-nums mt-0.5">—</div>
-                            <div id="mvp-fg-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 tirs</div>
+                            <div id="mvp-fg-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 shoots</div>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
+                            <div class="text-[9px] font-bold uppercase text-slate-400">% LF réussis</div>
+                            <div id="mvp-ft-pct" class="text-base sm:text-lg font-black text-sky-300 tabular-nums mt-0.5">—</div>
+                            <div id="mvp-ft-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 LF</div>
                         </div>
                         <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
                             <div class="text-[9px] font-bold uppercase text-slate-400">Fautes prov.</div>
                             <div id="mvp-fouls-drawn" class="text-base sm:text-lg font-black text-rose-400 tabular-nums mt-0.5">0</div>
-                            <div class="text-[9px] text-slate-400">Dépassement</div>
-                        </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
-                            <div class="text-[9px] font-bold uppercase text-slate-400">Contres</div>
-                            <div id="mvp-blk-val" class="text-base sm:text-lg font-black text-sky-300 tabular-nums mt-0.5">0</div>
-                            <div class="text-[9px] text-slate-400">CTR</div>
                         </div>
                     </div>
                 </div>
@@ -424,6 +445,8 @@
         let archivedMatches = [];
         let magicNotes = [];
         let playerPhotos = {};
+        let clubLogo = '';
+        let hideMvpGrade = false;
         function getActivePlayer() {
             return state.players[state.activePlayerIndex] || state.players[0];
         }
@@ -502,6 +525,7 @@
                 localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(archivedMatches));
                 localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(magicNotes));
                 localStorage.setItem('basket_stats_multi_photos_v1', JSON.stringify(playerPhotos));
+                localStorage.setItem('basket_stats_club_logo_v1', clubLogo || '');
             } catch (err) {
                 console.error('Erreur sauvegarde :', err);
             }
@@ -547,6 +571,10 @@
                 if (rawPhotos) {
                     const parsedPhotos = JSON.parse(rawPhotos);
                     if (parsedPhotos && typeof parsedPhotos === 'object') playerPhotos = parsedPhotos;
+                }
+                const rawClubLogo = localStorage.getItem('basket_stats_club_logo_v1');
+                if (rawClubLogo) {
+                    clubLogo = rawClubLogo;
                 }
             } catch (err) {
                 console.error('Erreur chargement :', err);
@@ -1706,9 +1734,48 @@
             const mvpModal = document.getElementById('mvp-card-modal');
             const mvpPhotoImg = document.getElementById('mvp-player-photo-img');
             const mvpPhotoInput = document.getElementById('mvp-photo-file-input');
+            const clubLogoBtn = document.getElementById('change-club-logo-btn');
+            const clubLogoImg = document.getElementById('club-logo-img');
+            const clubLogoPlaceholder = document.getElementById('club-logo-placeholder');
+            const clubLogoInput = document.getElementById('club-logo-file-input');
+            const mvpGradeBadge = document.getElementById('mvp-grade-badge');
+            const toggleMvpGradeBtn = document.getElementById('toggle-mvp-grade-btn');
+            const mvpGradeEyeOpen = document.getElementById('mvp-grade-eye-open');
+            const mvpGradeEyeOff = document.getElementById('mvp-grade-eye-off');
+
+            function updateMvpGradeVisibility() {
+                if (!mvpGradeBadge) return;
+                if (hideMvpGrade) {
+                    mvpGradeBadge.classList.add('hidden');
+                    if (mvpGradeEyeOpen) mvpGradeEyeOpen.classList.add('hidden');
+                    if (mvpGradeEyeOff) mvpGradeEyeOff.classList.remove('hidden');
+                } else {
+                    mvpGradeBadge.classList.remove('hidden');
+                    if (mvpGradeEyeOpen) mvpGradeEyeOpen.classList.remove('hidden');
+                    if (mvpGradeEyeOff) mvpGradeEyeOff.classList.add('hidden');
+                }
+            }
+
+            if (toggleMvpGradeBtn) {
+                toggleMvpGradeBtn.addEventListener('click', () => {
+                    hideMvpGrade = !hideMvpGrade;
+                    updateMvpGradeVisibility();
+                });
+            }
+
+            function renderClubLogo() {
+                if (clubLogo) {
+                    clubLogoImg.src = clubLogo;
+                    clubLogoImg.classList.remove('hidden');
+                    clubLogoPlaceholder.classList.add('hidden');
+                } else {
+                    clubLogoImg.src = '';
+                    clubLogoImg.classList.add('hidden');
+                    clubLogoPlaceholder.classList.remove('hidden');
+                }
+            }
 
             function getPlayerShotStats(player) {
-                // Utilise les tirs réussis/tentés enregistrés, avec repli sur pts2/pts3/pts1 si l'utilisateur a saisi uniquement dans Points marqués
                 const made2 = (player.fg2Made || 0) > 0 ? (player.fg2Made || 0) : Math.floor((player.pts2 || 0) / 2);
                 const att2 = Math.max(player.fg2Attempted || 0, made2);
 
@@ -1717,12 +1784,13 @@
 
                 const madeFt = (player.ftMade || 0) > 0 ? (player.ftMade || 0) : (player.pts1 || 0);
                 const attFt = Math.max(player.ftAttempted || 0, madeFt);
+                const ftPct = attFt > 0 ? Math.round((madeFt / attFt) * 100) : null;
 
                 const totalMade = made2 + made3 + madeFt;
                 const totalAtt = att2 + att3 + attFt;
                 const pct = totalAtt > 0 ? Math.round((totalMade / totalAtt) * 100) : null;
 
-                return { made2, made3, madeFt, totalMade, totalAtt, pct };
+                return { made2, made3, madeFt, attFt, ftPct, totalMade, totalAtt, pct };
             }
 
             function renderMvpCard() {
@@ -1735,7 +1803,6 @@
                 const threshold = Math.max(1, state.doubleThreshold || 10);
                 const totalReb = getTotalRebounds(p);
 
-                // Vérification du badge Double-Double / Triple-Double / Quadruple / Quintuple
                 const doubleCount = [
                     (p.points || 0) >= threshold,
                     totalReb >= threshold,
@@ -1768,7 +1835,6 @@
                     }
                 }
 
-                // Calcul d'une note globale style 2K pour l'hexagone à droite
                 const impactScore = (p.points || 0) + totalReb * 1.2 + (p.assists || 0) * 1.5 + (p.steals || 0) * 2 + (p.blocks || 0) * 2 + (p.foulsDrawn || 0);
                 let grade = 'C+';
                 if (doubleCount >= 3 || impactScore >= 42) grade = 'A+';
@@ -1788,24 +1854,32 @@
                 document.getElementById('mvp-hud-pts').textContent = String(p.points || 0);
                 document.getElementById('mvp-pts-big').textContent = String(p.points || 0);
                 document.getElementById('mvp-pts-share').textContent = `${ptsShare}% (${p.points || 0}/${teamTotalPts})`;
-                document.getElementById('mvp-2pts-val').textContent = `${p.pts2 || 0} pts (${shots.made2})`;
-                document.getElementById('mvp-3pts-val').textContent = `${p.pts3 || 0} pts (${shots.made3})`;
-                document.getElementById('mvp-ft-val').textContent = `${p.pts1 || 0} pt (${shots.madeFt})`;
+
+                const pts2Total = shots.made2 * 2;
+                const pts3Total = shots.made3 * 3;
+                const pts1Total = shots.madeFt;
+                document.getElementById('mvp-2pts-val').textContent = `${pts2Total} ${pts2Total > 1 ? 'pts' : 'pt'} (${shots.made2}P)`;
+                document.getElementById('mvp-3pts-val').textContent = `${pts3Total} ${pts3Total > 1 ? 'pts' : 'pt'} (${shots.made3}P)`;
+                document.getElementById('mvp-ft-val').textContent = `${pts1Total} ${pts1Total > 1 ? 'pts' : 'pt'} (${shots.madeFt}P)`;
 
                 document.getElementById('mvp-fg-pct').textContent = shots.pct !== null ? `${shots.pct}%` : '—';
                 document.getElementById('mvp-fg-detail').textContent = `${shots.totalMade}/${shots.totalAtt} shoots`;
+                document.getElementById('mvp-ft-pct').textContent = shots.ftPct !== null ? `${shots.ftPct}%` : '—';
+                document.getElementById('mvp-ft-detail').textContent = `${shots.madeFt}/${shots.attFt} LF`;
                 document.getElementById('mvp-fouls-drawn').textContent = String(p.foulsDrawn || 0);
 
                 document.getElementById('mvp-reb-val').textContent = String(totalReb);
                 document.getElementById('mvp-ast-val').textContent = String(p.assists || 0);
                 document.getElementById('mvp-stl-val').textContent = String(p.steals || 0);
-                document.getElementById('mvp-blk-val').textContent = String(p.blocks || 0);
+                document.getElementById('mvp-hud-blk-val').textContent = String(p.blocks || 0);
 
                 if (playerPhotos[slotKey]) {
                     mvpPhotoImg.src = playerPhotos[slotKey];
                 } else {
                     mvpPhotoImg.src = `https://placehold.co/240x280/0f172a/a3e635?text=PHOTO`;
                 }
+                renderClubLogo();
+                updateMvpGradeVisibility();
             }
 
             document.getElementById('open-mvp-card-btn').addEventListener('click', () => {
@@ -1841,6 +1915,28 @@
                         showToast('Photo ajoutée à la fiche');
                     } catch (err) {
                         console.error('Erreur photo :', err);
+                        showToast('Image trop lourde');
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+
+            clubLogoBtn.addEventListener('click', () => {
+                clubLogoInput.click();
+            });
+
+            clubLogoInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        clubLogo = String(reader.result || '');
+                        saveAll();
+                        renderClubLogo();
+                        showToast('Logo du club ajouté');
+                    } catch (err) {
+                        console.error('Erreur logo club :', err);
                         showToast('Image trop lourde');
                     }
                 };
