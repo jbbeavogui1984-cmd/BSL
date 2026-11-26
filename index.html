@@ -30,6 +30,9 @@
         .goal-reached-anim {
             animation: pulseSuccess 0.35s ease-out;
         }
+        .hex-badge {
+            clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%);
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-orange-500 selection:text-white">
@@ -156,68 +159,108 @@
                 <span>Copier le bilan</span>
             </button>
             <button id="reset-match-btn" type="button"
-                class="py-3.5 px-3 rounded-xl bg-rose-950/90 hover:bg-rose-900 active:scale-[0.98] text-rose-200 border border-rose-800/80 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+                class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-rose-950 active:scale-[0.98] text-slate-300 hover:text-rose-200 border border-slate-700 hover:border-rose-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
                 <span>Nouveau match (0)</span>
             </button>
         </div>
     </footer>
 
-    <!-- Modale Fiche Joueur / Fin de Match (masquée par défaut, ouverte uniquement au clic sur Fiche joueur) -->
-    <div id="mvp-card-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl my-auto max-h-[92vh] overflow-y-auto space-y-3">
+    <!-- Modale Fiche Joueur (masquée tant qu'on n'appuie pas sur "Fiche joueur") -->
+    <div id="mvp-card-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl max-h-[92vh] overflow-y-auto space-y-3">
             <div class="flex items-center justify-between gap-2">
                 <div>
-                    <h2 class="text-base sm:text-lg font-extrabold text-white">Fiche joueur</h2>
-                    <p class="text-[11px] text-slate-400">Condensé essentiel &amp; photo du joueur</p>
+                    <h2 class="text-base sm:text-lg font-black text-white">Fiche joueur</h2>
+                    <p class="text-xs text-slate-400">Bilan du match & photo du joueur</p>
                 </div>
-                <button id="close-mvp-card-btn" type="button" aria-label="Fermer la fiche" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">
+                <button id="close-mvp-card-btn" type="button" aria-label="Fermer la fiche joueur"
+                    class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">
                     ✕
                 </button>
             </div>
 
-            <!-- Visuel carte inspiré du screenshot (cadre doré + photo + stats clés) -->
-            <div id="mvp-card-preview" class="relative rounded-2xl overflow-hidden border-2 border-amber-400 bg-gradient-to-b from-slate-900 via-black to-black shadow-2xl">
-                <div class="relative h-56 sm:h-64 w-full bg-slate-950 overflow-hidden">
-                    <img id="mvp-player-photo-img" src="https://placehold.co/600x400/0f172a/facc15?text=PHOTO+JOUEUR" alt="Photo du joueur"
-                        onerror="this.onerror=null;this.src='https://placehold.co/600x400/0f172a/facc15?text=PHOTO+JOUEUR';"
-                        class="w-full h-full object-cover object-top">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent"></div>
-                    <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow">
-                        FIN DE MATCH
-                    </span>
-                    <button id="change-mvp-photo-btn" type="button"
-                        class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/75 hover:bg-black text-amber-300 border border-amber-400/50 text-[11px] font-extrabold backdrop-blur-sm transition">
-                        Ajouter / Changer photo
-                    </button>
-                    <input id="mvp-photo-file-input" type="file" accept="image/*" class="hidden">
-
-                    <!-- Badge Double-Double / Triple-Double dans la zone sombre de la photo -->
-                    <div id="mvp-double-badge" class="hidden absolute left-2.5 bottom-16 sm:bottom-18 px-3 py-1 rounded-xl border-2 shadow-xl backdrop-blur-md flex items-center gap-1.5">
-                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                        <span id="mvp-double-badge-text" class="text-[11px] sm:text-xs font-black uppercase tracking-wider">DOUBLE-DOUBLE</span>
+            <!-- Visuel carte inspiré du HUD NBA 2K (encart photo + bandeau Game Stats + hexagone note) -->
+            <div id="mvp-card-preview" class="relative rounded-2xl overflow-hidden border-2 border-lime-400/85 bg-black shadow-2xl">
+                <!-- Partie sombre du haut avec encart photo et bandeau Game Stats -->
+                <div class="bg-gradient-to-b from-slate-900 via-slate-950 to-black p-3.5 pt-3 border-b border-white/10 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-wider">
+                        <span class="text-lime-400">● GAME STATS</span>
+                        <span id="mvp-match-scoreline" class="text-slate-300 truncate">NOUS 0 – 0 EUX</span>
                     </div>
 
-                    <div class="absolute bottom-2 inset-x-3 text-center">
-                        <div id="mvp-player-name" class="text-xl sm:text-2xl font-black uppercase tracking-wide text-amber-400 drop-shadow">
-                            JOUEUR 1
+                    <!-- Bandeau HUD Style 2K -->
+                    <div class="relative flex items-center pt-3">
+                        <!-- Encart Photo Portrait à gauche -->
+                        <div id="change-mvp-photo-box" title="Appuyer pour ajouter ou changer la photo"
+                            class="relative z-20 w-20 h-24 sm:w-24 sm:h-28 rounded-2xl bg-slate-900 border-2 border-lime-400 shadow-xl overflow-hidden shrink-0 cursor-pointer">
+                            <img id="mvp-player-photo-img" src="https://placehold.co/240x280/0f172a/a3e635?text=PHOTO" alt="Photo du joueur"
+                                onerror="this.onerror=null;this.src='https://placehold.co/240x280/0f172a/a3e635?text=PHOTO';"
+                                class="w-full h-full object-cover object-top">
+                            <button id="change-mvp-photo-btn" type="button"
+                                class="absolute inset-x-0 bottom-0 bg-black/80 hover:bg-black py-0.5 text-center text-[9px] font-black uppercase text-lime-300 transition">
+                                + Photo
+                            </button>
                         </div>
-                        <div id="mvp-match-scoreline" class="text-xs font-extrabold tracking-wider text-white/90 uppercase">
-                            0 – 0
+                        <input id="mvp-photo-file-input" type="file" accept="image/*" class="hidden">
+
+                        <!-- Barre noire + bordure verte néon avec Prénom en onglet et Stats -->
+                        <div class="flex-1 -ml-3 pl-5 pr-2 py-2 bg-black border-y-2 border-lime-400 rounded-r-xl shadow-lg relative min-w-0">
+                            <!-- Onglet Prénom + Game Stats au-dessus -->
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 -mt-6 mb-1.5 bg-black border-t-2 border-x-2 border-lime-400 rounded-t-lg max-w-full">
+                                <span id="mvp-player-name" class="text-xs sm:text-sm font-black italic uppercase tracking-wide text-white truncate">JOUEUR 1</span>
+                                <span class="text-[9px] font-extrabold uppercase text-lime-400 shrink-0">• Game Stats</span>
+                            </div>
+
+                            <!-- Colonnes PTS / REB / PAD / INT -->
+                            <div class="grid grid-cols-4 gap-1 text-center">
+                                <div>
+                                    <div class="text-[10px] font-black italic text-slate-300">PTS</div>
+                                    <div id="mvp-hud-pts" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-black italic text-slate-300">REB</div>
+                                    <div id="mvp-reb-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-black italic text-slate-300">PAD</div>
+                                    <div id="mvp-ast-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] font-black italic text-slate-300">INT</div>
+                                    <div id="mvp-stl-val" class="mt-0.5 py-1 rounded bg-slate-700/85 text-sm sm:text-base font-black italic text-white tabular-nums">0</div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Hexagone Note du match à droite -->
+                        <div class="relative z-20 -ml-2 w-14 h-16 sm:w-16 sm:h-18 bg-lime-400 hex-badge flex items-center justify-center p-[2.5px] shrink-0 shadow-lg">
+                            <div class="w-full h-full bg-black hex-badge flex flex-col items-center justify-center">
+                                <span id="mvp-grade-letter" class="text-lg sm:text-xl font-black text-white leading-none">B</span>
+                                <span class="text-[7px] font-black uppercase text-lime-400 tracking-tighter">NOTE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Badge Double-Double / Triple-Double dans la zone sombre -->
+                    <div id="mvp-double-badge" class="hidden justify-center">
+                        <span id="mvp-double-badge-text" class="px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                            ★ DOUBLE-DOUBLE VALIDÉ
+                        </span>
                     </div>
                 </div>
 
-                <div class="p-3.5 space-y-3 bg-black">
+                <!-- Partie inférieure : Condensé précis -->
+                <div class="p-3.5 space-y-2.5 bg-black">
                     <!-- Bloc Points + % des points d'équipe + détail 2 pts / 3 pts / LF -->
-                    <div class="rounded-xl border border-amber-400/35 bg-slate-950/90 p-3 space-y-2">
+                    <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5 space-y-2">
                         <div class="flex items-baseline justify-between gap-2">
                             <div>
-                                <span id="mvp-pts-big" class="text-3xl font-black text-amber-400 tabular-nums">0</span>
-                                <span class="text-xs font-black uppercase text-amber-300 ml-1">PTS</span>
+                                <span id="mvp-pts-big" class="text-2xl font-black text-lime-400 tabular-nums">0</span>
+                                <span class="text-xs font-black uppercase text-slate-300 ml-1">PTS</span>
                             </div>
                             <div class="text-right">
-                                <span class="text-[11px] text-slate-400 block">Part des points (Nous)</span>
-                                <span id="mvp-pts-share" class="text-base font-black text-emerald-400 tabular-nums">0%</span>
+                                <span class="text-[10px] text-slate-400 block">Part des points (Nous)</span>
+                                <span id="mvp-pts-share" class="text-sm font-black text-emerald-400 tabular-nums">0%</span>
                             </div>
                         </div>
                         <div id="mvp-pts-breakdown" class="grid grid-cols-3 gap-1.5 pt-2 border-t border-white/10 text-center text-xs">
@@ -237,35 +280,21 @@
                     </div>
 
                     <!-- Stats essentielles en grille -->
-                    <div class="grid grid-cols-2 gap-2 text-center">
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5">
-                            <div class="text-[10px] font-bold uppercase text-slate-400">% Réussite au tir</div>
-                            <div id="mvp-fg-pct" class="text-xl font-black text-amber-400 tabular-nums mt-0.5">—</div>
-                            <div id="mvp-fg-detail" class="text-[10px] text-slate-400 tabular-nums">0/0 tirs</div>
+                    <div class="grid grid-cols-3 gap-1.5 text-center">
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
+                            <div class="text-[9px] font-bold uppercase text-slate-400">% Shoot</div>
+                            <div id="mvp-fg-pct" class="text-base sm:text-lg font-black text-lime-400 tabular-nums mt-0.5">—</div>
+                            <div id="mvp-fg-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 tirs</div>
                         </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2.5">
-                            <div class="text-[10px] font-bold uppercase text-slate-400">Fautes provoquées</div>
-                            <div id="mvp-fouls-drawn" class="text-xl font-black text-rose-400 tabular-nums mt-0.5">0</div>
-                            <div class="text-[10px] text-slate-400">Dépassement de soi</div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
+                            <div class="text-[9px] font-bold uppercase text-slate-400">Fautes prov.</div>
+                            <div id="mvp-fouls-drawn" class="text-base sm:text-lg font-black text-rose-400 tabular-nums mt-0.5">0</div>
+                            <div class="text-[9px] text-slate-400">Dépassement</div>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-1.5 text-center">
-                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
-                            <div id="mvp-reb-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
-                            <div class="text-[10px] font-bold text-slate-400">REB</div>
-                        </div>
-                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
-                            <div id="mvp-ast-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
-                            <div class="text-[10px] font-bold text-slate-400">PAD</div>
-                        </div>
-                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
-                            <div id="mvp-stl-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
-                            <div class="text-[10px] font-bold text-slate-400">INT</div>
-                        </div>
-                        <div class="rounded-lg bg-slate-950 border border-white/10 p-2">
-                            <div id="mvp-blk-val" class="text-base font-black text-amber-300 tabular-nums">0</div>
-                            <div class="text-[10px] font-bold text-slate-400">CTR</div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
+                            <div class="text-[9px] font-bold uppercase text-slate-400">Contres</div>
+                            <div id="mvp-blk-val" class="text-base sm:text-lg font-black text-sky-300 tabular-nums mt-0.5">0</div>
+                            <div class="text-[9px] text-slate-400">CTR</div>
                         </div>
                     </div>
                 </div>
@@ -489,11 +518,17 @@
                             ...parsed,
                             hiddenCategories: Array.isArray(parsed.hiddenCategories) ? parsed.hiddenCategories : [],
                             players: Array.isArray(parsed.players) && parsed.players.length === 4
-                                ? parsed.players.map((p, idx) => ({
-                                    ...createDefaultPlayer(idx),
-                                    ...p,
-                                    targets: { ...createDefaultPlayer(idx).targets, ...(p.targets || {}) }
-                                }))
+                                ? parsed.players.map((p, idx) => {
+                                    const mergedTargets = { ...createDefaultPlayer(idx).targets, ...(p.targets || {}) };
+                                    if (typeof mergedTargets.points !== 'number' || mergedTargets.points <= 0) {
+                                        mergedTargets.points = 10;
+                                    }
+                                    return {
+                                        ...createDefaultPlayer(idx),
+                                        ...p,
+                                        targets: mergedTargets
+                                    };
+                                })
                                 : state.players
                         };
                     }
@@ -837,8 +872,8 @@
 
             // Points marqués
             if (!state.hiddenCategories.includes('points')) {
-                const target = player.targets.points || 0;
-                const status = getStatus(player.points, target);
+                const target = Number(player.targets.points) || 0;
+                const status = target > 0 ? (player.points >= target ? 'green' : 'red') : 'red';
                 const theme = getCardTheme(status, animatedCategory === 'points');
                 const pct = target > 0 ? Math.min(100, Math.round((player.points / target) * 100)) : 0;
                 const pts1 = player.pts1 || 0;
@@ -1714,31 +1749,45 @@
                 if (doubleBadge && doubleBadgeText) {
                     if (doubleCount >= 2) {
                         const labels = {
-                            2: 'DOUBLE-DOUBLE',
-                            3: 'TRIPLE-DOUBLE',
-                            4: 'QUADRUPLE-DOUBLE',
-                            5: 'QUINTUPLE-DOUBLE'
+                            2: '★ DOUBLE-DOUBLE VALIDÉ',
+                            3: '★ TRIPLE-DOUBLE VALIDÉ',
+                            4: '★ QUADRUPLE-DOUBLE HISTORIQUE',
+                            5: '★ QUINTUPLE-DOUBLE LÉGENDAIRE'
                         };
                         const styles = {
-                            2: 'bg-emerald-500/90 border-emerald-200 text-slate-950',
-                            3: 'bg-amber-400/95 border-yellow-100 text-slate-950',
-                            4: 'bg-purple-400/95 border-purple-100 text-slate-950',
-                            5: 'bg-yellow-300/95 border-white text-slate-950'
+                            2: 'px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[10px] font-black uppercase tracking-wider',
+                            3: 'px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 text-[10px] font-black uppercase tracking-wider',
+                            4: 'px-3 py-0.5 rounded-full bg-purple-500/20 border border-purple-400 text-purple-200 text-[10px] font-black uppercase tracking-wider',
+                            5: 'px-3 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-300 text-yellow-200 text-[10px] font-black uppercase tracking-wider'
                         };
-                        doubleBadgeText.textContent = labels[doubleCount] || 'DOUBLE-DOUBLE';
-                        doubleBadge.className = `absolute left-2.5 bottom-16 sm:bottom-18 px-3 py-1 rounded-xl border-2 shadow-xl backdrop-blur-md flex items-center gap-1.5 ${styles[doubleCount] || styles[2]}`;
+                        doubleBadgeText.textContent = labels[doubleCount] || '★ DOUBLE-DOUBLE VALIDÉ';
+                        doubleBadgeText.className = styles[doubleCount] || styles[2];
+                        doubleBadge.className = 'flex justify-center';
                     } else {
                         doubleBadge.className = 'hidden';
                     }
                 }
+
+                // Calcul d'une note globale style 2K pour l'hexagone à droite
+                const impactScore = (p.points || 0) + totalReb * 1.2 + (p.assists || 0) * 1.5 + (p.steals || 0) * 2 + (p.blocks || 0) * 2 + (p.foulsDrawn || 0);
+                let grade = 'C+';
+                if (doubleCount >= 3 || impactScore >= 42) grade = 'A+';
+                else if (doubleCount === 2 || impactScore >= 30) grade = 'A';
+                else if (impactScore >= 20) grade = 'B+';
+                else if (impactScore >= 12) grade = 'B';
+                else if (impactScore >= 6) grade = 'B-';
+
+                const gradeEl = document.getElementById('mvp-grade-letter');
+                if (gradeEl) gradeEl.textContent = grade;
 
                 document.getElementById('mvp-player-name').textContent = playerLabel;
                 document.getElementById('mvp-match-scoreline').textContent = state.opponent
                     ? `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} ${state.opponent.toUpperCase()}`
                     : `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} EUX`;
 
+                document.getElementById('mvp-hud-pts').textContent = String(p.points || 0);
                 document.getElementById('mvp-pts-big').textContent = String(p.points || 0);
-                document.getElementById('mvp-pts-share').textContent = `${ptsShare}%`;
+                document.getElementById('mvp-pts-share').textContent = `${ptsShare}% (${p.points || 0}/${teamTotalPts})`;
                 document.getElementById('mvp-2pts-val').textContent = `${p.pts2 || 0} pts (${shots.made2})`;
                 document.getElementById('mvp-3pts-val').textContent = `${p.pts3 || 0} pts (${shots.made3})`;
                 document.getElementById('mvp-ft-val').textContent = `${p.pts1 || 0} pt (${shots.madeFt})`;
@@ -1755,7 +1804,7 @@
                 if (playerPhotos[slotKey]) {
                     mvpPhotoImg.src = playerPhotos[slotKey];
                 } else {
-                    mvpPhotoImg.src = `https://placehold.co/600x400/0f172a/facc15?text=${encodeURIComponent(playerLabel)}`;
+                    mvpPhotoImg.src = `https://placehold.co/240x280/0f172a/a3e635?text=PHOTO`;
                 }
             }
 
@@ -1776,7 +1825,7 @@
                 if (e.target === mvpModal) closeMvpModal();
             });
 
-            document.getElementById('change-mvp-photo-btn').addEventListener('click', () => {
+            document.getElementById('change-mvp-photo-box').addEventListener('click', () => {
                 mvpPhotoInput.click();
             });
 
