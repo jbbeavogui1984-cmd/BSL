@@ -145,18 +145,10 @@
 
     <!-- Pied de page actions -->
     <footer id="live-footer" class="bg-slate-900 border-t border-slate-800 mt-4">
-        <div class="max-w-3xl mx-auto px-3 sm:px-4 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="max-w-3xl mx-auto px-3 sm:px-4 py-3.5 grid grid-cols-2 gap-2.5">
             <button id="open-mvp-card-btn" type="button"
                 class="py-3.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-[0.98] text-slate-950 font-black text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
                 <span>Fiche joueur</span>
-            </button>
-            <button id="archive-match-btn" type="button"
-                class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] text-amber-300 border border-amber-500/40 font-extrabold text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
-                <span>Archiver le match</span>
-            </button>
-            <button id="copy-summary-btn" type="button"
-                class="py-3.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-1.5">
-                <span>Copier le bilan</span>
             </button>
             <button id="reset-match-btn" type="button"
                 class="py-3.5 px-3 rounded-xl bg-slate-800 hover:bg-rose-950 active:scale-[0.98] text-slate-300 hover:text-rose-200 border border-slate-700 hover:border-rose-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
@@ -329,9 +321,9 @@
                 </div>
             </div>
 
-            <button id="copy-mvp-card-btn" type="button"
-                class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition">
-                Copier ce condensé texte
+            <button id="save-mvp-card-btn" type="button"
+                class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-lg transition">
+                Enregistrer la fiche de match
             </button>
         </div>
     </div>
@@ -1285,6 +1277,10 @@
                         <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">CTR</div><div class="font-black">${m.blocks}</div></div>
                         <div class="bg-slate-950 rounded-lg p-1.5"><div class="text-[10px] text-slate-400">EFF</div><div class="font-black">${m.effort}</div></div>
                     </div>
+                    <button type="button" data-view-match="${m.id}"
+                        class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-[0.99] text-slate-950 font-black text-xs sm:text-sm shadow transition flex items-center justify-center gap-1.5">
+                        <span>Voir la fiche complète</span>
+                    </button>
                 </article>
             `).join('');
         }
@@ -1592,6 +1588,18 @@
             });
 
             document.getElementById('history-list').addEventListener('click', (e) => {
+                const viewBtn = e.target.closest('button[data-view-match]');
+                if (viewBtn) {
+                    const id = viewBtn.getAttribute('data-view-match');
+                    const matchRecord = archivedMatches.find(m => m.id === id);
+                    if (matchRecord) {
+                        renderMvpCard(matchRecord);
+                        mvpModal.classList.remove('hidden');
+                        mvpModal.classList.add('flex');
+                    }
+                    return;
+                }
+
                 const delBtn = e.target.closest('button[data-delete-match]');
                 if (!delBtn) return;
                 const id = delBtn.getAttribute('data-delete-match');
@@ -1601,53 +1609,59 @@
                 renderHeader();
             });
 
-            document.getElementById('archive-match-btn').addEventListener('click', () => {
-                const p = getActivePlayer();
-                archivedMatches.unshift({
-                    id: 'm_' + Date.now(),
-                    playerName: p.name || `Joueur ${state.activePlayerIndex + 1}`,
-                    opponent: state.opponent || '',
-                    date: state.matchDate || '',
-                    points: p.points,
-                    rebounds: getTotalRebounds(p),
-                    offRebounds: p.offRebounds || 0,
-                    defRebounds: p.defRebounds || 0,
-                    assists: p.assists,
-                    steals: p.steals,
-                    blocks: p.blocks,
-                    effort: getTotalEffort(p)
+            const archiveMatchBtn = document.getElementById('archive-match-btn');
+            if (archiveMatchBtn) {
+                archiveMatchBtn.addEventListener('click', () => {
+                    const p = getActivePlayer();
+                    archivedMatches.unshift({
+                        id: 'm_' + Date.now(),
+                        playerName: p.name || `Joueur ${state.activePlayerIndex + 1}`,
+                        opponent: state.opponent || '',
+                        date: state.matchDate || '',
+                        points: p.points,
+                        rebounds: getTotalRebounds(p),
+                        offRebounds: p.offRebounds || 0,
+                        defRebounds: p.defRebounds || 0,
+                        assists: p.assists,
+                        steals: p.steals,
+                        blocks: p.blocks,
+                        effort: getTotalEffort(p)
+                    });
+                    saveAll();
+                    renderHeader();
+                    showToast('Match archivé !');
                 });
-                saveAll();
-                renderHeader();
-                showToast('Match archivé !');
-            });
+            }
 
-            document.getElementById('copy-summary-btn').addEventListener('click', () => {
-                const p = getActivePlayer();
-                const summary = [
-                    `🏀 ${p.name || `Joueur ${state.activePlayerIndex + 1}`}${state.opponent ? ` vs ${state.opponent}` : ''}`,
-                    `Points : ${p.points} (+1 LF : ${p.pts1 || 0} / +2 : ${p.pts2 || 0} / +3 : ${p.pts3 || 0})`,
-                    `Rebonds : ${getTotalRebounds(p)} (Off : ${p.offRebounds || 0} / Déf : ${p.defRebounds || 0})`,
-                    `Assists : ${p.assists}`,
-                    `Interceptions : ${p.steals}`,
-                    `Contres : ${p.blocks}`,
-                    `Dépassement de soi : ${getTotalEffort(p)}`
-                ].join('\n');
+            const copySummaryBtn = document.getElementById('copy-summary-btn');
+            if (copySummaryBtn) {
+                copySummaryBtn.addEventListener('click', () => {
+                    const p = getActivePlayer();
+                    const summary = [
+                        `🏀 ${p.name || `Joueur ${state.activePlayerIndex + 1}`}${state.opponent ? ` vs ${state.opponent}` : ''}`,
+                        `Points : ${p.points} (+1 LF : ${p.pts1 || 0} / +2 : ${p.pts2 || 0} / +3 : ${p.pts3 || 0})`,
+                        `Rebonds : ${getTotalRebounds(p)} (Off : ${p.offRebounds || 0} / Déf : ${p.defRebounds || 0})`,
+                        `Assists : ${p.assists}`,
+                        `Interceptions : ${p.steals}`,
+                        `Contres : ${p.blocks}`,
+                        `Dépassement de soi : ${getTotalEffort(p)}`
+                    ].join('\n');
 
-                const ta = document.createElement('textarea');
-                ta.value = summary;
-                ta.style.position = 'fixed';
-                ta.style.left = '-9999px';
-                document.body.appendChild(ta);
-                ta.select();
-                try {
-                    document.execCommand('copy');
-                    showToast('Bilan copié !');
-                } catch (_) {
-                    showToast('Copie impossible');
-                }
-                document.body.removeChild(ta);
-            });
+                    const ta = document.createElement('textarea');
+                    ta.value = summary;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('Bilan copié !');
+                    } catch (_) {
+                        showToast('Copie impossible');
+                    }
+                    document.body.removeChild(ta);
+                });
+            }
 
             const resetModal = document.getElementById('reset-modal');
             document.getElementById('reset-match-btn').addEventListener('click', () => {
@@ -1770,6 +1784,7 @@
             }
 
             function renderClubLogo() {
+                if (!clubLogoImg || !clubLogoPlaceholder) return;
                 if (clubLogo) {
                     clubLogoImg.src = clubLogo;
                     clubLogoImg.classList.remove('hidden');
@@ -1799,15 +1814,50 @@
                 return { made2, made3, madeFt, attFt, ftPct, totalMade, totalAtt, pct };
             }
 
-            function renderMvpCard() {
-                const p = getActivePlayer();
-                const slotKey = String(state.activePlayerIndex);
-                const playerLabel = (p.name || `Joueur ${state.activePlayerIndex + 1}`).toUpperCase();
-                const teamTotalPts = Math.max(state.scoreUs || 0, p.points || 0);
+            function renderMvpCard(archivedRecord = null) {
+                const isArchivedView = Boolean(archivedRecord);
+                const p = archivedRecord ? {
+                    name: archivedRecord.playerName,
+                    points: archivedRecord.points || 0,
+                    pts1: archivedRecord.pts1 || 0,
+                    pts2: archivedRecord.pts2 || 0,
+                    pts3: archivedRecord.pts3 || 0,
+                    fg2Made: archivedRecord.fg2Made || 0,
+                    fg2Attempted: archivedRecord.fg2Attempted || 0,
+                    fg3Made: archivedRecord.fg3Made || 0,
+                    fg3Attempted: archivedRecord.fg3Attempted || 0,
+                    ftMade: archivedRecord.ftMade || 0,
+                    ftAttempted: archivedRecord.ftAttempted || 0,
+                    offRebounds: archivedRecord.offRebounds || 0,
+                    defRebounds: archivedRecord.defRebounds || 0,
+                    assists: archivedRecord.assists || 0,
+                    steals: archivedRecord.steals || 0,
+                    blocks: archivedRecord.blocks || 0,
+                    foulsDrawn: archivedRecord.foulsDrawn || 0,
+                    sprints: archivedRecord.sprints || 0,
+                    looseBalls: archivedRecord.looseBalls || 0,
+                    targets: archivedRecord.targets || {}
+                } : getActivePlayer();
+
+                const slotKey = String(archivedRecord && typeof archivedRecord.playerSlot === 'number' ? archivedRecord.playerSlot : state.activePlayerIndex);
+                const playerLabel = (p.name || `Joueur ${Number(slotKey) + 1}`).toUpperCase();
+                const matchScoreUs = archivedRecord ? (archivedRecord.scoreUs || 0) : (state.scoreUs || 0);
+                const matchScoreThem = archivedRecord ? (archivedRecord.scoreThem || 0) : (state.scoreThem || 0);
+                const matchOpponent = archivedRecord ? (archivedRecord.opponent || '') : (state.opponent || '');
+                const teamTotalPts = Math.max(matchScoreUs, p.points || 0);
                 const ptsShare = teamTotalPts > 0 ? Math.round(((p.points || 0) / teamTotalPts) * 100) : 0;
                 const shots = getPlayerShotStats(p);
-                const threshold = Math.max(1, state.doubleThreshold || 10);
-                const totalReb = getTotalRebounds(p);
+                const threshold = Math.max(1, (archivedRecord && archivedRecord.doubleThreshold) || state.doubleThreshold || 10);
+                const totalReb = archivedRecord && typeof archivedRecord.rebounds === 'number' ? archivedRecord.rebounds : getTotalRebounds(p);
+
+                const saveBtn = document.getElementById('save-mvp-card-btn');
+                if (saveBtn) {
+                    if (isArchivedView) {
+                        saveBtn.classList.add('hidden');
+                    } else {
+                        saveBtn.classList.remove('hidden');
+                    }
+                }
 
                 const doubleCount = [
                     (p.points || 0) >= threshold,
@@ -1853,9 +1903,9 @@
                 if (gradeEl) gradeEl.textContent = grade;
 
                 document.getElementById('mvp-player-name').textContent = playerLabel;
-                document.getElementById('mvp-match-scoreline').textContent = state.opponent
-                    ? `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} ${state.opponent.toUpperCase()}`
-                    : `NOUS ${state.scoreUs || 0} – ${state.scoreThem || 0} EUX`;
+                document.getElementById('mvp-match-scoreline').textContent = matchOpponent
+                    ? `NOUS ${matchScoreUs} – ${matchScoreThem} ${matchOpponent.toUpperCase()}`
+                    : `NOUS ${matchScoreUs} – ${matchScoreThem} EUX`;
 
                 document.getElementById('mvp-hud-pts').textContent = String(p.points || 0);
                 document.getElementById('mvp-pts-big').textContent = String(p.points || 0);
@@ -1875,7 +1925,7 @@
                 document.getElementById('mvp-fouls-drawn').textContent = String(p.foulsDrawn || 0);
 
                 // Calcul de l'encart Intensité (Fautes provoquées + Sprints défensifs + Balles arrachées vs Objectifs)
-                const intensityDone = getTotalEffort(p);
+                const intensityDone = archivedRecord && typeof archivedRecord.effort === 'number' ? archivedRecord.effort : getTotalEffort(p);
                 const intensityTarget = (p.targets?.foulsDrawnTarget || 0) + (p.targets?.sprintsTarget || 0) + (p.targets?.looseBallsTarget || 0);
                 const intensityValEl = document.getElementById('mvp-intensity-val');
                 const intensityBarEl = document.getElementById('mvp-intensity-bar');
@@ -1915,7 +1965,9 @@
                 document.getElementById('mvp-stl-val').textContent = String(p.steals || 0);
                 document.getElementById('mvp-hud-blk-val').textContent = String(p.blocks || 0);
 
-                if (playerPhotos[slotKey]) {
+                if (archivedRecord && archivedRecord.playerPhoto) {
+                    mvpPhotoImg.src = archivedRecord.playerPhoto;
+                } else if (playerPhotos[slotKey]) {
                     mvpPhotoImg.src = playerPhotos[slotKey];
                 } else {
                     mvpPhotoImg.src = `https://placehold.co/240x280/0f172a/a3e635?text=PHOTO`;
@@ -1925,9 +1977,15 @@
             }
 
             document.getElementById('open-mvp-card-btn').addEventListener('click', () => {
-                renderMvpCard();
-                mvpModal.classList.remove('hidden');
-                mvpModal.classList.add('flex');
+                try {
+                    renderMvpCard();
+                } catch (err) {
+                    console.error('Erreur affichage fiche joueur :', err);
+                }
+                if (mvpModal) {
+                    mvpModal.classList.remove('hidden');
+                    mvpModal.classList.add('flex');
+                }
             });
 
             function closeMvpModal() {
@@ -1945,20 +2003,51 @@
                 mvpPhotoInput.click();
             });
 
+            function compressImageDataUrl(dataUrl, maxDim, quality, callback) {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        let w = img.width || maxDim;
+                        let h = img.height || maxDim;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round((h * maxDim) / w);
+                                w = maxDim;
+                            } else {
+                                w = Math.round((w * maxDim) / h);
+                                h = maxDim;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        callback(canvas.toDataURL('image/jpeg', quality));
+                    } catch (_) {
+                        callback(dataUrl);
+                    }
+                };
+                img.onerror = () => callback(dataUrl);
+                img.src = dataUrl;
+            }
+
             mvpPhotoInput.addEventListener('change', (e) => {
                 const file = e.target.files && e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = () => {
-                    try {
-                        playerPhotos[String(state.activePlayerIndex)] = String(reader.result || '');
-                        saveAll();
-                        renderMvpCard();
-                        showToast('Photo ajoutée à la fiche');
-                    } catch (err) {
-                        console.error('Erreur photo :', err);
-                        showToast('Image trop lourde');
-                    }
+                    compressImageDataUrl(String(reader.result || ''), 360, 0.78, (compressed) => {
+                        try {
+                            playerPhotos[String(state.activePlayerIndex)] = compressed;
+                            saveAll();
+                            renderMvpCard();
+                            showToast('Photo ajoutée à la fiche');
+                        } catch (err) {
+                            console.error('Erreur photo :', err);
+                            showToast('Image trop lourde');
+                        }
+                    });
                 };
                 reader.readAsDataURL(file);
             });
@@ -1972,46 +2061,79 @@
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = () => {
-                    try {
-                        clubLogo = String(reader.result || '');
-                        saveAll();
-                        renderClubLogo();
-                        showToast('Logo du club ajouté');
-                    } catch (err) {
-                        console.error('Erreur logo club :', err);
-                        showToast('Image trop lourde');
-                    }
+                    compressImageDataUrl(String(reader.result || ''), 240, 0.82, (compressed) => {
+                        try {
+                            clubLogo = compressed;
+                            saveAll();
+                            renderClubLogo();
+                            showToast('Logo du club ajouté');
+                        } catch (err) {
+                            console.error('Erreur logo club :', err);
+                            showToast('Image trop lourde');
+                        }
+                    });
                 };
                 reader.readAsDataURL(file);
             });
 
-            document.getElementById('copy-mvp-card-btn').addEventListener('click', () => {
-                const p = getActivePlayer();
-                const teamTotalPts = Math.max(state.scoreUs || 0, p.points || 0);
-                const ptsShare = teamTotalPts > 0 ? Math.round(((p.points || 0) / teamTotalPts) * 100) : 0;
-                const shots = getPlayerShotStats(p);
-                const text = [
-                    `⭐ FICHE MATCH — ${(p.name || `Joueur ${state.activePlayerIndex + 1}`).toUpperCase()}`,
-                    `Score : Nous ${state.scoreUs || 0} – ${state.scoreThem || 0} ${state.opponent || 'Eux'}`,
-                    `Points : ${p.points || 0} PTS (${ptsShare}% des points Nous) — 2 pts : ${p.pts2 || 0} | 3 pts : ${p.pts3 || 0} | LF : ${p.pts1 || 0}`,
-                    `Réussite au shoot : ${shots.pct !== null ? `${shots.pct}%` : '—'} (${shots.totalMade}/${shots.totalAtt})`,
-                    `Fautes provoquées : ${p.foulsDrawn || 0}`,
-                    `REB : ${getTotalRebounds(p)} | ASS : ${p.assists || 0} | INT : ${p.steals || 0} | CTR : ${p.blocks || 0}`
-                ].join('\n');
-
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.style.position = 'fixed';
-                ta.style.left = '-9999px';
-                document.body.appendChild(ta);
-                ta.select();
+            function saveCurrentMvpCardToHistory() {
                 try {
-                    document.execCommand('copy');
-                    showToast('Condensé copié !');
-                } catch (_) {
-                    showToast('Copie impossible');
+                    const p = getActivePlayer();
+                    const shots = getPlayerShotStats(p);
+                    archivedMatches.unshift({
+                        id: 'm_' + Date.now(),
+                        playerSlot: state.activePlayerIndex,
+                        playerName: p.name || `Joueur ${state.activePlayerIndex + 1}`,
+                        opponent: state.opponent || '',
+                        date: state.matchDate || '',
+                        scoreUs: state.scoreUs || 0,
+                        scoreThem: state.scoreThem || 0,
+                        doubleThreshold: state.doubleThreshold || 10,
+                        points: p.points || 0,
+                        pts1: p.pts1 || 0,
+                        pts2: p.pts2 || 0,
+                        pts3: p.pts3 || 0,
+                        fg2Made: p.fg2Made || 0,
+                        fg2Attempted: p.fg2Attempted || 0,
+                        fg3Made: p.fg3Made || 0,
+                        fg3Attempted: p.fg3Attempted || 0,
+                        ftMade: p.ftMade || 0,
+                        ftAttempted: p.ftAttempted || 0,
+                        fgPct: shots.pct,
+                        fgDetail: `${shots.totalMade}/${shots.totalAtt}`,
+                        ftPct: shots.ftPct,
+                        ftDetail: `${shots.madeFt}/${shots.attFt}`,
+                        rebounds: getTotalRebounds(p),
+                        offRebounds: p.offRebounds || 0,
+                        defRebounds: p.defRebounds || 0,
+                        assists: p.assists || 0,
+                        steals: p.steals || 0,
+                        blocks: p.blocks || 0,
+                        foulsDrawn: p.foulsDrawn || 0,
+                        sprints: p.sprints || 0,
+                        looseBalls: p.looseBalls || 0,
+                        targets: { ...(p.targets || {}) },
+                        effort: getTotalEffort(p)
+                    });
+                    saveAll();
+                    renderHeader();
+                    if (activeTab === 'history') {
+                        renderHistory();
+                    }
+                    closeMvpModal();
+                    showToast('Fiche enregistrée dans l’Historique !');
+                } catch (err) {
+                    console.error('Erreur enregistrement fiche :', err);
+                    showToast('Erreur lors de l’enregistrement');
                 }
-                document.body.removeChild(ta);
+            }
+
+            document.addEventListener('click', (e) => {
+                const saveBtn = e.target.closest('#save-mvp-card-btn');
+                if (saveBtn) {
+                    e.preventDefault();
+                    saveCurrentMvpCardToHistory();
+                }
             });
         });
 
