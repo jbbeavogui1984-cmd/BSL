@@ -301,21 +301,29 @@
                         </div>
                     </div>
 
-                    <!-- Stats essentielles en grille -->
-                    <div class="grid grid-cols-3 gap-1.5 text-center">
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
-                            <div class="text-[9px] font-bold uppercase text-slate-400">% Shoot réussis</div>
-                            <div id="mvp-fg-pct" class="text-base sm:text-lg font-black text-lime-400 tabular-nums mt-0.5">—</div>
-                            <div id="mvp-fg-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 shoots</div>
+                    <!-- 4 encarts ajustés en bas : % Shoot réussis, % LF réussis, Fautes prov., Intensité -->
+                    <div class="grid grid-cols-4 gap-1 text-center">
+                        <div class="rounded-xl border border-white/10 bg-slate-950 px-1 py-2 flex flex-col justify-between">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 leading-tight">% SHOOT RÉUSSIS</div>
+                            <div id="mvp-fg-pct" class="text-sm sm:text-base font-black text-lime-400 tabular-nums mt-1">—</div>
+                            <div id="mvp-fg-detail" class="text-[8px] text-slate-400 tabular-nums">0/0 shoots</div>
                         </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
-                            <div class="text-[9px] font-bold uppercase text-slate-400">% LF réussis</div>
-                            <div id="mvp-ft-pct" class="text-base sm:text-lg font-black text-sky-300 tabular-nums mt-0.5">—</div>
-                            <div id="mvp-ft-detail" class="text-[9px] text-slate-400 tabular-nums">0/0 LF</div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 px-1 py-2 flex flex-col justify-between">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 leading-tight">% LF RÉUSSIS</div>
+                            <div id="mvp-ft-pct" class="text-sm sm:text-base font-black text-sky-300 tabular-nums mt-1">—</div>
+                            <div id="mvp-ft-detail" class="text-[8px] text-slate-400 tabular-nums">0/0 LF</div>
                         </div>
-                        <div class="rounded-xl border border-white/10 bg-slate-950 p-2">
-                            <div class="text-[9px] font-bold uppercase text-slate-400">Fautes prov.</div>
-                            <div id="mvp-fouls-drawn" class="text-base sm:text-lg font-black text-rose-400 tabular-nums mt-0.5">0</div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 px-1 py-2 flex flex-col justify-between">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 leading-tight">FAUTES PROV.</div>
+                            <div id="mvp-fouls-drawn" class="text-sm sm:text-base font-black text-rose-400 tabular-nums mt-1">0</div>
+                            <div class="text-[8px] text-transparent select-none">•</div>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-slate-950 px-1.5 py-2 flex flex-col justify-between">
+                            <div class="text-[8px] font-bold uppercase text-slate-400 leading-tight">INTENSITÉ</div>
+                            <div id="mvp-intensity-val" class="text-sm sm:text-base font-black text-slate-300 tabular-nums mt-1">0</div>
+                            <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden mt-1">
+                                <div id="mvp-intensity-bar" class="h-full bg-slate-600 transition-all duration-300" style="width: 0%;"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1865,6 +1873,42 @@
                 document.getElementById('mvp-ft-pct').textContent = shots.ftPct !== null ? `${shots.ftPct}%` : '—';
                 document.getElementById('mvp-ft-detail').textContent = `${shots.madeFt}/${shots.attFt} LF`;
                 document.getElementById('mvp-fouls-drawn').textContent = String(p.foulsDrawn || 0);
+
+                // Calcul de l'encart Intensité (Fautes provoquées + Sprints défensifs + Balles arrachées vs Objectifs)
+                const intensityDone = getTotalEffort(p);
+                const intensityTarget = (p.targets?.foulsDrawnTarget || 0) + (p.targets?.sprintsTarget || 0) + (p.targets?.looseBallsTarget || 0);
+                const intensityValEl = document.getElementById('mvp-intensity-val');
+                const intensityBarEl = document.getElementById('mvp-intensity-bar');
+
+                if (intensityValEl && intensityBarEl) {
+                    if (intensityTarget > 0) {
+                        const ratio = intensityDone / intensityTarget;
+                        const fillPct = Math.min(100, Math.max(intensityDone > 0 ? 10 : 0, Math.round(ratio * 100)));
+                        let textColor = 'text-rose-400';
+                        let barColor = 'bg-rose-500';
+
+                        if (ratio >= 1) {
+                            textColor = 'text-emerald-400';
+                            barColor = 'bg-emerald-400';
+                        } else if (ratio >= 0.65) {
+                            textColor = 'text-yellow-400';
+                            barColor = 'bg-yellow-400';
+                        } else if (ratio >= 0.35) {
+                            textColor = 'text-orange-400';
+                            barColor = 'bg-orange-400';
+                        }
+
+                        intensityValEl.textContent = `${intensityDone}/${intensityTarget}`;
+                        intensityValEl.className = `text-sm sm:text-base font-black ${textColor} tabular-nums mt-1`;
+                        intensityBarEl.className = `h-full ${barColor} transition-all duration-300`;
+                        intensityBarEl.style.width = `${fillPct}%`;
+                    } else {
+                        intensityValEl.textContent = String(intensityDone);
+                        intensityValEl.className = 'text-sm sm:text-base font-black text-slate-300 tabular-nums mt-1';
+                        intensityBarEl.className = 'h-full bg-slate-600 transition-all duration-300';
+                        intensityBarEl.style.width = intensityDone > 0 ? '100%' : '0%';
+                    }
+                }
 
                 document.getElementById('mvp-reb-val').textContent = String(totalReb);
                 document.getElementById('mvp-ast-val').textContent = String(p.assists || 0);
